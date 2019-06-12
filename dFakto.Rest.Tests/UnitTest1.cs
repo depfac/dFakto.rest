@@ -35,20 +35,19 @@ namespace dFakto.Rest.Tests
             Resource embedde = new Resource("https://dfdfdfdfdf/self");
 
             Resource r = new Resource(new Uri("http://sdsdsdsd"));
-            r.AddLink("prev", new Uri("http://ddfdfdfddf/prev"));
-            r.AddLink("next", new Uri("http://ddfdfdfddf/next"));
-
-            r.Add("testint", 33);
-            r.Remove("Double");
-            r.Add(GetModel(), new []{"Double"});
-            r.Add(GetModel());
-            r.Add("testurl",new Uri("http://dfdfdfdf"));
-            r.Add(new MyModel {Test = "toto"}, new []{"test"});
-            r.AddEmbedded("same", embedde);
-            r.AddEmbedded("same", embedde);
-            r.AddEmbedded("same", embedde);
-            r.AddLink("same", embedde.Self, linkName: "11");
-            r.AddLink("same", embedde.Self, linkName: "22");
+            r.AddLink("prev", new Uri("http://ddfdfdfddf/prev"))
+                .AddLink("next", new Uri("http://ddfdfdfddf/next"))
+                .Add("testint", 33)
+                .Remove("Double")
+                .Add(GetModel(), new[] {"Double"})
+                .Add(GetModel())
+                .Add("testurl", new Uri("http://dfdfdfdf"))
+                .Add(new MyModel {Test = "toto"}, new[] {"test"})
+                .AddEmbedded("same", embedde)
+                .AddEmbedded("same", embedde)
+                .AddEmbedded("same", embedde)
+                .AddLink("same", new Link(embedde.Self) {Name = "coucou"})
+                .AddLink("same", new Link(embedde.Self) {Name = "toto"});
             var j = r.ToString(true);
         }
     }

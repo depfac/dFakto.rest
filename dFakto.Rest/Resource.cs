@@ -50,7 +50,7 @@ namespace dFakto.Rest
             }
         }
 
-        public void Remove(string name)
+        public Resource Remove(string name)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             
@@ -58,19 +58,21 @@ namespace dFakto.Rest
             {
                 _json.Remove(name);
             }
+
+            return this;
         }
         
-        public void Add(object value, IEnumerable<string> only = null)
+        public Resource Add(object value, IEnumerable<string> only = null)
         {
             if (value == null)
-                return;
+                return this;
 
             var j = JObject.FromObject(value, JsonSerializer);
             if (only != null)
             {
                 var o = only.Select(x => x.ToLower()).ToArray();
                 if(o.Length == 0)
-                    return;
+                    return this;
 
                 var removed = j.Properties().Where(p => !o.Contains(p.Name.ToLower())).ToArray();
 
@@ -78,44 +80,29 @@ namespace dFakto.Rest
             }
 
             _json.Merge(j, MergeSettings);
+
+            return this;
         }
 
-        public void Add(string propertyName, JToken propertyValue)
+        public Resource Add(string propertyName, JToken propertyValue)
         {
             if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
             if (propertyValue == null)
-                return;
+                return this;
 
             _json.Add(propertyName, propertyValue);
+
+            return this;
         }
 
-        public void AddLink(string name,
-            Uri href,
-            bool? isTemplate = null,
-            Uri deprecation = null,
-            string hrefLang = null,
-            string type = null,
-            string title = null,
-            string linkName = null,
-            Uri profile = null)
+        public Resource AddLink(string name, Link link)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
-            if (href == null) throw new ArgumentNullException(nameof(href));
-
-            var l = JToken.FromObject(new Link
-            {
-                Href = href,
-                Templated = isTemplate,
-                Title = title,
-                Deprecation = deprecation,
-                Hreflang = hrefLang,
-                Name = linkName,
-                Profile = profile,
-                Type = type
-            }, JsonSerializer);
-
+            if (link == null) throw new ArgumentNullException(nameof(link));
+            
             if (!_json.ContainsKey(LinksPropertyName)) Add(LinksPropertyName, new JObject());
 
+            var l = JObject.FromObject(link);
             var links = (JObject) _json[LinksPropertyName];
 
             if (!links.ContainsKey(name))
@@ -137,33 +124,37 @@ namespace dFakto.Rest
 
                 ((JArray) links[name]).Add(l);
             }
+
+            return this;
         }
 
-        public void AddEmbedded(string name, Resource resource)
+        public Resource AddLink(string name,Uri href)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
-            if (resource == null)
-                return;
+            if (href == null) throw new ArgumentNullException(nameof(href));
 
-            AddEmbedded(name, new[] {resource});
+            return AddLink(name, new Link(href));
         }
 
-        public void AddEmbedded(string name, params Resource[] resources)
+        public Resource AddEmbedded(string name, Resource resource)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
-            if (resources == null)
-                return;
-
-            AddEmbedded(name, (IEnumerable<Resource>) resources);
+            return resource == null ? this : AddEmbedded(name, new[] {resource});
         }
 
-        public void AddEmbedded(string name, IEnumerable<Resource> resource)
+        public Resource AddEmbedded(string name, params Resource[] resources)
+        {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            return resources == null ? this : AddEmbedded(name, (IEnumerable<Resource>) resources);
+        }
+
+        public Resource AddEmbedded(string name, IEnumerable<Resource> resource)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (resource == null) throw new ArgumentNullException(nameof(resource));
 
             if (!resource.Any())
-                return;
+                return this;
 
             if (!_json.ContainsKey(EmbeddedPropertyName))
             {
@@ -174,6 +165,7 @@ namespace dFakto.Rest
             var embedded = (JObject) _json[EmbeddedPropertyName];
 
             foreach (var r in resource)
+            {
                 if (!embedded.ContainsKey(name))
                 {
                     embedded.Add(name, r._json);
@@ -190,6 +182,9 @@ namespace dFakto.Rest
 
                     ((JArray) embedded[name]).Add(r._json);
                 }
+            }
+
+            return this;
         }
 
         public string ToString(bool indented)
