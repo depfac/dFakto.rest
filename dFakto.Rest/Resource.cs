@@ -27,23 +27,18 @@ namespace dFakto.Rest
             MergeNullValueHandling = MergeNullValueHandling.Merge
         };
 
-        private readonly JObject _json = new JObject();
-
-        public Resource(Uri self)
-        {
-            Self = self ?? throw new ArgumentNullException(nameof(self));
-        }
+        internal JObject Value { get; } = new JObject();
 
         public Resource(string self)
         {
             if (string.IsNullOrWhiteSpace(self))
                 throw new ArgumentException("Value cannot be null or whitespace.", nameof(self));
-            Self = new Uri(self);
+            Self = self;
         }
 
-        public Uri Self
+        public string Self
         {
-            get => _json[LinksPropertyName]?[SelfPropertyName]?[HrefPropertyName]?.Value<Uri>();
+            get => Value[LinksPropertyName]?[SelfPropertyName]?[HrefPropertyName]?.Value<string>();
             set
             {
                 if (value != null) AddLink(SelfPropertyName, value);
@@ -54,9 +49,9 @@ namespace dFakto.Rest
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             
-            if (_json.ContainsKey(name))
+            if (Value.ContainsKey(name))
             {
-                _json.Remove(name);
+                Value.Remove(name);
             }
 
             return this;
@@ -79,7 +74,7 @@ namespace dFakto.Rest
                 foreach (var p in removed) p.Remove();
             }
 
-            _json.Merge(j, MergeSettings);
+            Value.Merge(j, MergeSettings);
 
             return this;
         }
@@ -90,7 +85,7 @@ namespace dFakto.Rest
             if (propertyValue == null)
                 return this;
 
-            _json.Add(propertyName, propertyValue);
+            Value.Add(propertyName, propertyValue);
 
             return this;
         }
@@ -100,10 +95,10 @@ namespace dFakto.Rest
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (link == null) throw new ArgumentNullException(nameof(link));
             
-            if (!_json.ContainsKey(LinksPropertyName)) Add(LinksPropertyName, new JObject());
+            if (!Value.ContainsKey(LinksPropertyName)) Add(LinksPropertyName, new JObject());
 
-            var l = JObject.FromObject(link);
-            var links = (JObject) _json[LinksPropertyName];
+            var l = JObject.FromObject(link, JsonSerializer);
+            var links = (JObject) Value[LinksPropertyName];
 
             if (!links.ContainsKey(name))
             {
@@ -128,7 +123,7 @@ namespace dFakto.Rest
             return this;
         }
 
-        public Resource AddLink(string name,Uri href)
+        public Resource AddLink(string name, string href)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (href == null) throw new ArgumentNullException(nameof(href));
@@ -156,19 +151,18 @@ namespace dFakto.Rest
             if (!resource.Any())
                 return this;
 
-            if (!_json.ContainsKey(EmbeddedPropertyName))
+            if (!Value.ContainsKey(EmbeddedPropertyName))
             {
-                _json[LinksPropertyName].Parent.AddAfterSelf(new JProperty(EmbeddedPropertyName,new JObject()));
-                //Add(EmbeddedPropertyName, new JObject());
+                Value[LinksPropertyName].Parent.AddAfterSelf(new JProperty(EmbeddedPropertyName,new JObject()));
             }
 
-            var embedded = (JObject) _json[EmbeddedPropertyName];
+            var embedded = (JObject) Value[EmbeddedPropertyName];
 
             foreach (var r in resource)
             {
                 if (!embedded.ContainsKey(name))
                 {
-                    embedded.Add(name, r._json);
+                    embedded.Add(name, r.Value);
                 }
                 else
                 {
@@ -180,21 +174,16 @@ namespace dFakto.Rest
                         embedded[name] = array;
                     }
 
-                    ((JArray) embedded[name]).Add(r._json);
+                    ((JArray) embedded[name]).Add(r.Value);
                 }
             }
 
             return this;
         }
 
-        public string ToString(bool indented)
-        {
-            return _json.ToString(indented ? Formatting.Indented : Formatting.None);
-        }
-
         public override string ToString()
         {
-            return _json.ToString(Formatting.None);
+            return Value.ToString(Formatting.Indented);
         }
     }
 }

@@ -34,9 +34,9 @@ namespace dFakto.Rest.Tests
 
             Resource embedde = new Resource("https://dfdfdfdfdf/self");
 
-            Resource r = new Resource(new Uri("http://sdsdsdsd"));
-            r.AddLink("prev", new Uri("http://ddfdfdfddf/prev"))
-                .AddLink("next", new Uri("http://ddfdfdfddf/next"))
+            Resource r = new Resource("http://sdsdsdsd");
+            r.AddLink("prev", "http://ddfdfdfddf/prev")
+                .AddLink("next", "http://ddfdfdfddf/next")
                 .Add("testint", 33)
                 .Remove("Double")
                 .Add(GetModel(), new[] {"Double"})
@@ -48,7 +48,6 @@ namespace dFakto.Rest.Tests
                 .AddEmbedded("same", embedde)
                 .AddLink("same", new Link(embedde.Self) {Name = "coucou"})
                 .AddLink("same", new Link(embedde.Self) {Name = "toto"});
-            var j = r.ToString(true);
         }
     }
 }
