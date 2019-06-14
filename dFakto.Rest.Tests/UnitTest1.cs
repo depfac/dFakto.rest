@@ -52,9 +52,14 @@ namespace dFakto.Rest.Tests
                 .AddLink("same", new Link(embedde.Self) {Name = "coucou"})
                 .AddLink("same", new Link(embedde.Self) {Name = "toto"});
             
-            
             string json = JsonConvert.SerializeObject(r,Formatting.Indented, ser);
+
+            Resource rr = JsonConvert.DeserializeObject<Resource>(json);
             
+            string json2 = JsonConvert.SerializeObject(rr,Formatting.Indented, ser);
+            
+            Assert.Equal(json,json2);
+
         }
 
 

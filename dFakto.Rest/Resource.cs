@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace dFakto.Rest
@@ -13,9 +14,12 @@ namespace dFakto.Rest
     {
         private const string SelfPropertyName = "self";
         
-        private readonly Dictionary<string,object> _fields = new Dictionary<string, object>();
+        private readonly Dictionary<string,JToken> _fields = new Dictionary<string, JToken>();
         private readonly Dictionary<string,List<Resource>> _embedded = new Dictionary<string,List<Resource>>();
         private readonly Dictionary<string,List<Link>> _links = new Dictionary<string,List<Link>>();
+        
+        internal Resource()
+        {}
         
         public Resource(string self)
         {
@@ -24,7 +28,7 @@ namespace dFakto.Rest
             Self = self;
         }
         
-        internal IDictionary<string,object> Fields
+        internal IDictionary<string,JToken> Fields
         {
             get => _fields;
         }
@@ -41,6 +45,37 @@ namespace dFakto.Rest
         {
             get => GetFirstLink(SelfPropertyName)?.Href;
             set => AddLink(SelfPropertyName, value);
+        }
+
+        public T GetField<T>(string fieldName)
+        {
+            return _fields[fieldName].Value<T>();
+        }
+
+        public bool ContainsLink(string name)
+        {
+            return _links.ContainsKey(name);
+        }
+
+        public bool ContainsEmbedded(string name)
+        {
+            return _embedded.ContainsKey(name);
+        }
+
+        public Link[] GetLinks(string name)
+        {
+            if (!ContainsLink(name))
+                return new Link[0];
+            
+            return _links[name].ToArray();
+        }
+
+        public Resource[] GetEmbedded(string name)
+        {
+            if (!ContainsEmbedded(name))
+                return new Resource[0];
+
+            return _embedded[name].ToArray();
         }
 
         public Resource Remove(string name)
@@ -69,13 +104,13 @@ namespace dFakto.Rest
 
             foreach (var pro in properties)
             {
-                AddOrReplaceField(pro.Name, pro.GetValue(value));
+                AddOrReplaceField(pro.Name, JToken.FromObject(pro.GetValue(value)));
             }
 
             return this;
         }
 
-        public Resource Add<T>(string propertyName, T propertyValue) where T :struct
+        public Resource Add(string propertyName, JToken propertyValue)
         {
             if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
 
@@ -83,23 +118,6 @@ namespace dFakto.Rest
 
             return this;
         }
-        public Resource Add(string propertyName, string propertyValue)
-        {
-            if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
-
-            AddOrReplaceField(propertyName, propertyValue);
-
-            return this;
-        }
-        public Resource Add(string propertyName, Uri propertyValue)
-        {
-            if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
-
-            AddOrReplaceField(propertyName, propertyValue);
-
-            return this;
-        }
-        
 
         public Resource AddLink(string name, Link link)
         {
@@ -153,7 +171,7 @@ namespace dFakto.Rest
             return this;
         }
         
-        private void AddOrReplaceField(string fieldName, object value)
+        private void AddOrReplaceField(string fieldName, JToken value)
         {
             if (_fields.ContainsKey(fieldName))
             {
