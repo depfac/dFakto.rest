@@ -1,5 +1,7 @@
 using System;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Xunit;
 
 namespace dFakto.Rest.Tests
@@ -26,12 +28,39 @@ namespace dFakto.Rest.Tests
             };
         }
 
+        [Fact]
+        public void TestSerializer()
+        {
+            var ser = new JsonSerializerSettings();
+            ser.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            ser.NullValueHandling = NullValueHandling.Ignore;
+
+            Resource embedde = new Resource("https://dfdfdfdfdf/self");
+
+            Resource r = new Resource("http://sdsdsdsd");
+            r.AddLink("prev", "http://ddfdfdfddf/prev")
+                .AddLink("next", "http://ddfdfdfddf/next")
+                .Add("testint", 33)
+                .Remove("Double")
+                .Add(GetModel(), new[] {"Double"})
+                .Add(GetModel())
+                .Add("testurl", "http://dfdfdfdf")
+                .Add(new MyModel {Test = "toto"}, new[] {"test"})
+                .AddEmbedded("same", embedde)
+                .AddEmbedded("same", embedde)
+                .AddEmbedded("same", embedde)
+                .AddLink("same", new Link(embedde.Self) {Name = "coucou"})
+                .AddLink("same", new Link(embedde.Self) {Name = "toto"});
+            
+            
+            string json = JsonConvert.SerializeObject(r,Formatting.Indented, ser);
+            
+        }
+
 
         [Fact]
         public void Test1()
         {
-            Resource.JsonSerializer.DateFormatHandling = DateFormatHandling.IsoDateFormat;
-
             Resource embedde = new Resource("https://dfdfdfdfdf/self");
 
             Resource r = new Resource("http://sdsdsdsd");

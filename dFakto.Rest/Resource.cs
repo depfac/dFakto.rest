@@ -1,126 +1,125 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace dFakto.Rest
 {
+    [JsonConverter(typeof(ResourceConverter))]
     public class Resource
     {
-        private const string LinksPropertyName = "_links";
-        private const string EmbeddedPropertyName = "_embedded";
         private const string SelfPropertyName = "self";
-        private const string HrefPropertyName = "href";
-
-        public static readonly JsonSerializer JsonSerializer = new JsonSerializer
-        {
-            NullValueHandling = NullValueHandling.Ignore,
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
-        };
-
-        private static readonly JsonMergeSettings MergeSettings = new JsonMergeSettings
-        {
-            MergeArrayHandling = MergeArrayHandling.Replace,
-            PropertyNameComparison = StringComparison.InvariantCultureIgnoreCase,
-            MergeNullValueHandling = MergeNullValueHandling.Merge
-        };
-
-        internal JObject Value { get; } = new JObject();
-
+        
+        private readonly Dictionary<string,object> _fields = new Dictionary<string, object>();
+        private readonly Dictionary<string,List<Resource>> _embedded = new Dictionary<string,List<Resource>>();
+        private readonly Dictionary<string,List<Link>> _links = new Dictionary<string,List<Link>>();
+        
         public Resource(string self)
         {
             if (string.IsNullOrWhiteSpace(self))
                 throw new ArgumentException("Value cannot be null or whitespace.", nameof(self));
             Self = self;
         }
+        
+        internal IDictionary<string,object> Fields
+        {
+            get => _fields;
+        }
+        internal Dictionary<string,List<Link>> Links
+        {
+            get => _links;
+        }
+        internal Dictionary<string,List<Resource>> Embedded
+        {
+            get => _embedded;
+        }
 
         public string Self
         {
-            get => Value[LinksPropertyName]?[SelfPropertyName]?[HrefPropertyName]?.Value<string>();
-            set
-            {
-                if (value != null) AddLink(SelfPropertyName, value);
-            }
+            get => GetFirstLink(SelfPropertyName)?.Href;
+            set => AddLink(SelfPropertyName, value);
         }
 
         public Resource Remove(string name)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             
-            if (Value.ContainsKey(name))
+            if (_fields.ContainsKey(name))
             {
-                Value.Remove(name);
+                _fields.Remove(name);
             }
 
             return this;
         }
-        
+
         public Resource Add(object value, IEnumerable<string> only = null)
         {
             if (value == null)
                 return this;
 
-            var j = JObject.FromObject(value, JsonSerializer);
+            var properties = (IEnumerable<PropertyInfo>) value.GetType().GetProperties(BindingFlags.Public);
             if (only != null)
             {
                 var o = only.Select(x => x.ToLower()).ToArray();
-                if(o.Length == 0)
-                    return this;
-
-                var removed = j.Properties().Where(p => !o.Contains(p.Name.ToLower())).ToArray();
-
-                foreach (var p in removed) p.Remove();
+                properties = properties.Where(x => o.Contains(x.Name.ToLower()));
             }
 
-            Value.Merge(j, MergeSettings);
+            foreach (var pro in properties)
+            {
+                AddOrReplaceField(pro.Name, pro.GetValue(value));
+            }
 
             return this;
         }
 
-        public Resource Add(string propertyName, JToken propertyValue)
+        public Resource Add<T>(string propertyName, T propertyValue) where T :struct
         {
             if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
-            if (propertyValue == null)
-                return this;
 
-            Value.Add(propertyName, propertyValue);
+            AddOrReplaceField(propertyName, propertyValue);
 
             return this;
         }
+        public Resource Add(string propertyName, string propertyValue)
+        {
+            if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
+
+            AddOrReplaceField(propertyName, propertyValue);
+
+            return this;
+        }
+        public Resource Add(string propertyName, Uri propertyValue)
+        {
+            if (propertyName == null) throw new ArgumentNullException(nameof(propertyName));
+
+            AddOrReplaceField(propertyName, propertyValue);
+
+            return this;
+        }
+        
 
         public Resource AddLink(string name, Link link)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             if (link == null) throw new ArgumentNullException(nameof(link));
-            
-            if (!Value.ContainsKey(LinksPropertyName)) Add(LinksPropertyName, new JObject());
 
-            var l = JObject.FromObject(link, JsonSerializer);
-            var links = (JObject) Value[LinksPropertyName];
-
-            if (!links.ContainsKey(name))
+            if (!_links.ContainsKey(name))
             {
-                links.Add(name, l);
+                _links.Add(name,new List<Link>());
             }
-            else
-            {
-                if (name == SelfPropertyName)
-                    throw new RestException("Resource cannot have two Self link");
-
-                if (links[name] is JObject)
-                {
-                    var array = new JArray();
-                    array.Add(links[name]);
-
-                    links[name] = array;
-                }
-
-                ((JArray) links[name]).Add(l);
-            }
-
+            _links[name].Add(link);
             return this;
+        }
+
+        public Link GetFirstLink(string name)
+        {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+            if (_links.ContainsKey(name))
+                return _links[name].First();
+            return null;
         }
 
         public Resource AddLink(string name, string href)
@@ -133,57 +132,37 @@ namespace dFakto.Rest
 
         public Resource AddEmbedded(string name, Resource resource)
         {
-            if (name == null) throw new ArgumentNullException(nameof(name));
-            return resource == null ? this : AddEmbedded(name, new[] {resource});
+            return AddEmbedded(name, new[] {resource});
         }
 
         public Resource AddEmbedded(string name, params Resource[] resources)
         {
-            if (name == null) throw new ArgumentNullException(nameof(name));
-            return resources == null ? this : AddEmbedded(name, (IEnumerable<Resource>) resources);
+            return AddEmbedded(name, (IEnumerable<Resource>)resources);
         }
 
-        public Resource AddEmbedded(string name, IEnumerable<Resource> resource)
+        public Resource AddEmbedded(string name, IEnumerable<Resource> resources)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
-            if (resource == null) throw new ArgumentNullException(nameof(resource));
-
-            if (!resource.Any())
-                return this;
-
-            if (!Value.ContainsKey(EmbeddedPropertyName))
+            
+            if (!_embedded.ContainsKey(name))
             {
-                Value[LinksPropertyName].Parent.AddAfterSelf(new JProperty(EmbeddedPropertyName,new JObject()));
+                _embedded.Add(name,new List<Resource>());
             }
 
-            var embedded = (JObject) Value[EmbeddedPropertyName];
-
-            foreach (var r in resource)
-            {
-                if (!embedded.ContainsKey(name))
-                {
-                    embedded.Add(name, r.Value);
-                }
-                else
-                {
-                    if (embedded[name] is JObject)
-                    {
-                        var array = new JArray();
-                        array.Add(embedded[name]);
-
-                        embedded[name] = array;
-                    }
-
-                    ((JArray) embedded[name]).Add(r.Value);
-                }
-            }
-
+            _embedded[name].AddRange(resources);
             return this;
         }
-
-        public override string ToString()
+        
+        private void AddOrReplaceField(string fieldName, object value)
         {
-            return Value.ToString(Formatting.Indented);
+            if (_fields.ContainsKey(fieldName))
+            {
+                _fields[fieldName] = value;
+            }
+            else
+            {
+                _fields.Add(fieldName, value);
+            }
         }
     }
 }

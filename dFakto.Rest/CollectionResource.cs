@@ -12,7 +12,6 @@ namespace dFakto.Rest
                                   int total, 
                                   IEnumerable<Resource> result) : base(self)
         {
-            Add(request);
             Add("total", total);
             
             Dictionary<string,string> queryParams = new Dictionary<string, string>();

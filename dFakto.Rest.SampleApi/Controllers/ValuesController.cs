@@ -18,7 +18,7 @@ namespace dFakto.Rest.SampleApi.Controllers
         
         // GET api/values
         [HttpGet()]
-        public ResourceResult Get([FromQuery] CollectionRequest request)
+        public JsonResult Get([FromQuery] CollectionRequest request)
         {
             //Create uri builder
             ResourceUriBuilder builder = new ResourceUriBuilder(Url);
@@ -28,7 +28,7 @@ namespace dFakto.Rest.SampleApi.Controllers
             var r = GetValues(total).Skip(request.Index).TakeWhile((x,y) => y < request.Limit);
             
             //Compute Response
-            return new ResourceResult(
+            return new JsonResult(
                 new CollectionResource(
                     builder.GetCurrentRouteUri(), 
                     request, 
@@ -38,10 +38,10 @@ namespace dFakto.Rest.SampleApi.Controllers
 
         // GET api/values/5
         [HttpGet("{id}",Name = "getbyid")]
-        public ResourceResult Get(int id)
+        public JsonResult Get(int id)
         {
             ResourceUriBuilder builder = new ResourceUriBuilder(Url);
-            return new ResourceResult(
+            return new JsonResult(
                 new Resource(builder.GetCurrentRouteUri())
                     .Add(new MySampleValue{Id = id, Value = "Value"+id}));
         }
@@ -52,7 +52,8 @@ namespace dFakto.Rest.SampleApi.Controllers
         {
             //Create uri builder
             ResourceUriBuilder builder = new ResourceUriBuilder(Url);
-            return Created(builder.GetUriFromRoute("getbyid", new {id = 12}),null);
+            var uri = builder.GetUriFromRoute("getbyid", new {id = 12});
+            return Created(uri,new Resource(uri));
         }
 
         // PUT api/values/5
