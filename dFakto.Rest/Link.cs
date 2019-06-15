@@ -8,7 +8,7 @@ namespace dFakto.Rest
         {
             Href = href;
         }
-        
+
         /// <summary>
         ///     Its value is either a URI [RFC3986] or a URI Template [RFC6570].
         ///     If the value is a URI Template then the Link Object SHOULD have a "templated" attribute whose value is true.
