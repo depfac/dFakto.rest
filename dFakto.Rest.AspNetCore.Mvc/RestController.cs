@@ -1,24 +1,30 @@
-using System.Collections.Generic;
+﻿using System;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace dFakto.Rest.SampleApi.Controllers
+namespace dFakto.Rest.AspNetCore.Mvc
 {
-    public class RestController : Controller
+    public class RestController : ControllerBase
     {
         public Resource CreateResource(string uri)
         {
             return HttpContext.RequestServices.GetService<ResourceBuilder>().Create().Self(uri);
         }
         
-        public Resource CreateResourceCollection(string uri, CollectionRequest request, long total)
+        public Resource CreateResourceCollection(string uri, CollectionRequest request, long? total = null)
         {
             var b = HttpContext.RequestServices.GetService<ResourceBuilder>();
-            return b.Create()
+            var r = b.Create()
                 .Self(uri)
-                .Add(request)
-                .Add("total", total);
+                .Add(request);
+            
+            if(total.HasValue)
+            {
+                r.Add("total", total.Value);
+            }
+
+            return r;
         }
         
         public string GetUriFromRoute(string routeName, object parameters)
@@ -27,7 +33,7 @@ namespace dFakto.Rest.SampleApi.Controllers
             return $"{r.Scheme}://{r.Host.ToString()}{Url.RouteUrl(routeName, parameters).ToLower()}";
         }
 
-        public string GetCurrentRouteUri()
+        public string GetCurrentUri()
         {
             var request = Url.ActionContext.HttpContext.Request;
 
@@ -45,6 +51,5 @@ namespace dFakto.Rest.SampleApi.Controllers
 
             return sb.ToString();
         }
-
     }
 }

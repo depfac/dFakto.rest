@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using dFakto.Rest.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -26,14 +27,14 @@ namespace dFakto.Rest.SampleApi.Controllers
             var total = 100;
             var r = GetValues(total).Skip(request.Index).TakeWhile((x,y) => y < request.Limit);
 
-            return Ok(CreateResourceCollection(GetCurrentRouteUri(), request, total).AddEmbedded("values",r.Select(x => CreateResource(GetUriFromRoute("getbyid",new {id=x.Id})).Add(x))));
+            return Ok(CreateResourceCollection(GetCurrentUri(), request, total).AddEmbedded("values",r.Select(x => CreateResource(GetUriFromRoute("getbyid",new {id=x.Id})).Add(x))));
         }
 
         // GET api/values/5
         [HttpGet("{id}",Name = "getbyid")]
         public Resource Get(int id)
         {
-            return CreateResource(GetCurrentRouteUri())
+            return CreateResource(GetCurrentUri())
                 .Add(new MySampleValue{Id = id, Value = "Value"+id});
         }
 
