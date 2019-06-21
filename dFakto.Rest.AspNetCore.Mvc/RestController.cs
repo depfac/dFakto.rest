@@ -7,12 +7,12 @@ namespace dFakto.Rest.AspNetCore.Mvc
 {
     public class RestController : ControllerBase
     {
-        public Resource CreateResource(string uri)
+        protected Resource CreateResource(string uri)
         {
             return HttpContext.RequestServices.GetService<ResourceBuilder>().Create().Self(uri);
         }
         
-        public Resource CreateResourceCollection(string uri, CollectionRequest request, long? total = null)
+        protected Resource CreateResourceCollection(string uri, CollectionRequest request, long? total = null)
         {
             var b = HttpContext.RequestServices.GetService<ResourceBuilder>();
             var r = b.Create()
@@ -27,13 +27,13 @@ namespace dFakto.Rest.AspNetCore.Mvc
             return r;
         }
         
-        public string GetUriFromRoute(string routeName, object parameters)
+        protected string GetUriFromRoute(string routeName, object parameters)
         {
             var r = Url.ActionContext.HttpContext.Request;
             return $"{r.Scheme}://{r.Host.ToString()}{Url.RouteUrl(routeName, parameters).ToLower()}";
         }
 
-        public string GetCurrentUri()
+        protected string GetCurrentUri()
         {
             var request = Url.ActionContext.HttpContext.Request;
 
