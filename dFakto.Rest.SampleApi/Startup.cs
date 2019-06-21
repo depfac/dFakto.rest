@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -34,6 +35,13 @@ namespace dFakto.Rest.SampleApi
                     opt.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                     opt.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
                 });
+
+            services.AddTransient(x =>
+            {
+                var o = x.GetService<IOptions<MvcJsonOptions>>();
+                return o != null ? o.Value.SerializerSettings : new JsonSerializerSettings();
+            });
+            services.AddTransient(x => new ResourceBuilder(x.GetService<JsonSerializerSettings>()));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

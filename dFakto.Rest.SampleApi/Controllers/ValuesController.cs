@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace dFakto.Rest.SampleApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ValuesController : ControllerBase
+    public class ValuesController : RestController
     {
         public class MySampleValue
         {
@@ -18,42 +20,29 @@ namespace dFakto.Rest.SampleApi.Controllers
         
         // GET api/values
         [HttpGet()]
-        public JsonResult Get([FromQuery] CollectionRequest request)
+        public ActionResult Get([FromQuery] CollectionRequest request)
         {
-            //Create uri builder
-            ResourceUriBuilder builder = new ResourceUriBuilder(Url);
-
             //retrieve data
             var total = 100;
             var r = GetValues(total).Skip(request.Index).TakeWhile((x,y) => y < request.Limit);
-            
-            //Compute Response
-            return new JsonResult(
-                new CollectionResource(
-                    builder.GetCurrentRouteUri(), 
-                    request, 
-                    total,
-                    r.Select(x => new Resource(builder.GetUriFromRoute("getbyid",new {x.Id})).Add(x))));
+
+            return Ok(CreateResourceCollection(GetCurrentRouteUri(), request, total).AddEmbedded("values",r.Select(x => CreateResource(GetUriFromRoute("getbyid",new {id=x.Id})).Add(x))));
         }
 
         // GET api/values/5
         [HttpGet("{id}",Name = "getbyid")]
-        public JsonResult Get(int id)
+        public Resource Get(int id)
         {
-            ResourceUriBuilder builder = new ResourceUriBuilder(Url);
-            return new JsonResult(
-                new Resource(builder.GetCurrentRouteUri())
-                    .Add(new MySampleValue{Id = id, Value = "Value"+id}));
+            return CreateResource(GetCurrentRouteUri())
+                .Add(new MySampleValue{Id = id, Value = "Value"+id});
         }
 
         // POST api/values
         [HttpPost]
         public CreatedResult Post()
         {
-            //Create uri builder
-            ResourceUriBuilder builder = new ResourceUriBuilder(Url);
-            var uri = builder.GetUriFromRoute("getbyid", new {id = 12});
-            return Created(uri,new Resource(uri));
+            var uri = GetUriFromRoute("getbyid", new {id = 12});
+            return Created(uri,CreateResource(uri).Add("test","value"));
         }
 
         // PUT api/values/5

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -39,9 +40,9 @@ namespace dFakto.Rest.Tests
         [Fact]
         public void Test_Self_Exists()
         {
-            var r = new Resource("http://someuri");
+            var r = CreateResource().Self("http://someuri");
             
-            Assert.Equal("http://someuri", r.Self);
+            Assert.Equal("http://someuri", r.GetSelf().Href);
 
             var l = r.GetLinks("self");
             Assert.NotEmpty(l);
@@ -50,9 +51,7 @@ namespace dFakto.Rest.Tests
         [Fact]
         public void Test_Add_Fields()
         {
-            var r = new Resource("http://someuri");
-            r.Add("test", 33);
-            r.Add("test2", "hello");
+            var r = CreateResource().Self("http://someuri").Add("test", 33).Add("test2", "hello");
             
             Assert.Equal(33,r.GetField<int>("test"));
             Assert.Equal("hello",r.GetField<string>("test2"));
@@ -61,41 +60,31 @@ namespace dFakto.Rest.Tests
         [Fact]
         public void Test_Add_Null()
         {
-            var r = new Resource("http://someuri");
-            r.Add("test", null);
+            var r = CreateResource().Self("http://someuri").Add("test", null,null);
             
             Assert.Null(r.GetField<string>("test"));
             Assert.False(r.ContainsField("test2"));
             Assert.Null(r.GetField<string>("test2"));
         }
+
+        [Fact]
+        public void Test()
+        {
+            var r = CreateResource().Self("http://someuri").Add(new {Field1 = "dfdf", Field2 = "test"}, new []{"Field2"});
+            
+            Assert.Null(r.GetField<string>("field1"));
+            Assert.False(r.ContainsField("field2"));
+            Assert.Null(r.GetField<string>("field2"));
+        }
         
         [Fact]
         public void Test_Override_Field()
         {
-            var r = new Resource("http://someuri");
-            r.Add("test", "value");
-            r.Add("test", 10);
+            var r = CreateResource().Self("http://someuri")
+                .Add("test", "value")
+                .Add("test", 10);
             
             Assert.Equal(10,r.GetField<int>("test"));
-
-            r.Add("test", null);
-            
-            Assert.False(r.ContainsField("test"));
-            Assert.Null(r.GetField<string>("test"));
-        }
-        
-        [Fact]
-        public void Test_Remove_Field()
-        {
-            var r = new Resource("http://someuri");
-            r.Add("test", 10);
-            
-            Assert.Equal(10,r.GetField<int>("test"));
-
-            r.RemoveField("test");
-            
-            Assert.False(r.ContainsField("test"));
-            Assert.Null(r.GetField<string>("test"));
         }
 
         [Fact]
@@ -105,9 +94,9 @@ namespace dFakto.Rest.Tests
             ser.ContractResolver = new CamelCasePropertyNamesContractResolver();
             ser.NullValueHandling = NullValueHandling.Ignore;
 
-            Resource embedde = new Resource("https://dfdfdfdfdf/self");
+            var embedde = CreateResource().Self("https://dfdfdfdfdf/self");
 
-            Resource r = new Resource("http://sdsdsdsd");
+            var r = CreateResource().Self("http://sdsdsdsd");
             r.AddLink("prev", "http://ddfdfdfddf/prev")
                 .AddLink("next", "http://ddfdfdfddf/next")
                 .Add("testint", 33)
@@ -118,17 +107,27 @@ namespace dFakto.Rest.Tests
                 .AddEmbedded("same", embedde)
                 .AddEmbedded("same", embedde)
                 .AddEmbedded("same", embedde)
-                .AddLink("same", new Link(embedde.Self) {Name = "coucou"})
-                .AddLink("same", new Link(embedde.Self) {Name = "toto"});
+                .AddLink("same", new Link(embedde.GetSelf().Href) {Name = "coucou"})
+                .AddLink("same", new Link(embedde.GetSelf().Href) {Name = "toto"});
             
             string json = JsonConvert.SerializeObject(r,Formatting.Indented, ser);
 
-            Resource rr = JsonConvert.DeserializeObject<Resource>(json);
+            var rr = JsonConvert.DeserializeObject<Resource>(json);
             
             string json2 = JsonConvert.SerializeObject(rr,Formatting.Indented, ser);
             
             Assert.Equal(json,json2);
 
+        }
+
+        public Resource CreateResource()
+        {   
+            var ser = new JsonSerializerSettings();
+            ser.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            ser.NullValueHandling = NullValueHandling.Ignore;
+
+            ResourceBuilder builder = new ResourceBuilder(ser);
+            return builder.Create();
         }
     }
 }
