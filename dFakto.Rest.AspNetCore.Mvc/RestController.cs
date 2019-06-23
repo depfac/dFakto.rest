@@ -17,7 +17,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
             var b = HttpContext.RequestServices.GetService<ResourceBuilder>();
             var r = b.Create()
                 .Self(uri)
-                .Add(request);
+                .Merge(request);
             
             if(total.HasValue)
             {

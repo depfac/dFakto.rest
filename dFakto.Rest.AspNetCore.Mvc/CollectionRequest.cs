@@ -1,4 +1,4 @@
-namespace dFakto.Rest
+namespace dFakto.Rest.AspNetCore.Mvc
 {
     public enum SortOrder
     {

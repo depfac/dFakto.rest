@@ -32,7 +32,15 @@ namespace dFakto.Rest
 
         public T GetField<T>(string fieldName)
         {
-            return !_json.ContainsKey(fieldName) ? default(T) : _json[fieldName].Value<T>();
+            if(!_json.ContainsKey(fieldName))
+                return default(T);
+
+            var t = _json[fieldName];
+            
+            if (t is JObject || t is JArray)
+                return t.ToObject<T>();
+            
+            return t.Value<T>();
         }
 
         public bool ContainsField(string name)
@@ -50,8 +58,10 @@ namespace dFakto.Rest
 
         public bool ContainsEmbedded(string name)
         {
-            var e = (JObject) _json.ContainsKey(Properties.Embedded);
-            return e?.ContainsKey(name) ?? false;
+            var e = (JObject)_json[Properties.Embedded];
+            if(e == null)
+                return false;
+            return e.ContainsKey(name) ;
         }
 
         public IEnumerable<Link> GetLinks(string name)
@@ -83,8 +93,10 @@ namespace dFakto.Rest
         
         public IEnumerable<string> GetEmbeddedNames()
         {
-            var e = (JObject) _json.ContainsKey(Properties.Embedded);
-            return e?.Properties().Select(x => x.Name);
+            var e = (JObject)_json[Properties.Embedded];
+            if(e == null)
+                return new string[0];
+            return e.Properties().Select(x => x.Name);
         }
         
         public IEnumerable<string> GetFieldsNames()
@@ -97,18 +109,22 @@ namespace dFakto.Rest
             if(!ContainsEmbedded(name))
                 yield break;
 
-            var e = ((JObject)_json.ContainsKey(Properties.Embedded))[name];
-            
-            if (e is JArray array)
+            var e = ((JObject)_json[Properties.Embedded])[name];
+            switch (e)
             {
-                foreach (var embed in array)
+                case JArray array:
                 {
-                    yield return new Resource((JObject) embed,_serializer);
+                    foreach (var embed in array)
+                    {
+                        yield return new Resource((JObject) embed, _serializer);
+                    }
+
+                    break;
                 }
-            }
-            else
-            {
-                yield return new Resource((JObject)e,_serializer);
+
+                default:
+                    yield return new Resource((JObject) e, _serializer);
+                    break;
             }
         }
 
@@ -126,28 +142,26 @@ namespace dFakto.Rest
             AddLink(Properties.Self, uri);
             return this;
         }
-        public Resource Add<T>(T value) where T : class
+        public Resource Merge<T>(T value) where T : class
         {
-            return Add(string.Empty, value, null);
+            return AddOrReplaceField(string.Empty, value, null);
         }
-        public Resource Add<T>(T value, IEnumerable<string> only) where T : class
+        public Resource Merge<T>(T value, IEnumerable<string> only) where T : class
         {
-            return Add(string.Empty, value, only);
+            return AddOrReplaceField(string.Empty, value, only);
         }
         public Resource Add(string propertyName, object value, IEnumerable<string> only = null)
         {
-            if (propertyName == null)
+            if (string.IsNullOrWhiteSpace(propertyName))
             {
                 throw new ArgumentNullException(nameof(propertyName));
             }
 
-            AddOrReplaceField(propertyName, value, only);
-
-            return this;
+            return AddOrReplaceField(propertyName, value, only);
         }
         public Resource AddLink(string name, Link link)
         {
-            if (name == null)
+            if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentNullException(nameof(name));
             }
@@ -182,12 +196,12 @@ namespace dFakto.Rest
         }
         public Resource AddLink(string name, string href)
         {
-            if (name == null)
+            if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentNullException(nameof(name));
             }
 
-            if (href == null)
+            if (string.IsNullOrWhiteSpace(href))
             {
                 throw new ArgumentNullException(nameof(href));
             }
@@ -204,7 +218,7 @@ namespace dFakto.Rest
         }
         public Resource AddEmbedded(string name, IEnumerable<Resource> resources)
         {
-            if (name == null)
+            if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentNullException(nameof(name));
             }
@@ -247,9 +261,12 @@ namespace dFakto.Rest
             return this;
         }
 
-        private void AddOrReplaceField(string fieldName, object value, IEnumerable<string> only = null)
+        private Resource AddOrReplaceField(string fieldName, object value, IEnumerable<string> only = null)
         {
-
+            if(fieldName == Properties.Links ||
+               fieldName == Properties.Embedded)
+               throw new ArgumentException("Invalid field name, '_links' and '_embedded' are reserved names");
+            
             if (fieldName != string.Empty)
             {
                 if (_json.ContainsKey(fieldName))
@@ -266,10 +283,10 @@ namespace dFakto.Rest
                         var o = new JObject();
                         foreach (var token in GetOnlyJToken(jObject, only))
                         {
-                            _json.Add(token.Key, token.Value);
+                            o.Add(token.Key, token.Value);
                         }
 
-                        _json.Add(o);
+                        _json.Add(fieldName, o);
                     }
                     else
                     {
@@ -292,6 +309,8 @@ namespace dFakto.Rest
                     _json.Merge(o);
                 }
             }
+
+            return this;
         }
 
         private static IEnumerable<KeyValuePair<string,JToken>> GetOnlyJToken(JObject value, IEnumerable<string> only)

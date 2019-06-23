@@ -40,7 +40,7 @@ namespace dFakto.Rest
         ///     property.  The notification SHOULD include the deprecation property's
         ///     value so that a client manitainer can easily find information about the deprecation.
         /// </summary>
-        public Uri Deprecation { get; set; }
+        public string Deprecation { get; set; }
 
         /// <summary>
         ///     Its value MAY be used as a secondary key for selecting Link Objects which share the same relation type.
@@ -51,7 +51,7 @@ namespace dFakto.Rest
         ///     Its value is a string which is a URI that hints about the profile (as defined by [I-D.wilde-profile-link]) of the
         ///     target resource.
         /// </summary>
-        public Uri Profile { get; set; }
+        public string Profile { get; set; }
 
         /// <summary>
         ///     Its value is a string and is intended for indicating the language of the target resource (as defined by [RFC5988]).

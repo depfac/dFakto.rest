@@ -27,7 +27,7 @@ namespace dFakto.Rest.SampleApi.Controllers
             var total = 100;
             var r = GetValues(total).Skip(request.Index).TakeWhile((x,y) => y < request.Limit);
 
-            return Ok(CreateResourceCollection(GetCurrentUri(), request, total).AddEmbedded("values",r.Select(x => CreateResource(GetUriFromRoute("getbyid",new {id=x.Id})).Add(x))));
+            return Ok(CreateResourceCollection(GetCurrentUri(), request, total).AddEmbedded("values",r.Select(x => CreateResource(GetUriFromRoute("getbyid",new {id=x.Id})).Merge(x))));
         }
 
         // GET api/values/5
@@ -35,7 +35,7 @@ namespace dFakto.Rest.SampleApi.Controllers
         public Resource Get(int id)
         {
             return CreateResource(GetCurrentUri())
-                .Add(new MySampleValue{Id = id, Value = "Value"+id});
+                .Merge(new MySampleValue{Id = id, Value = "Value"+id});
         }
 
         // POST api/values
