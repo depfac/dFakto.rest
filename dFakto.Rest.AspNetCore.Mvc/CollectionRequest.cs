@@ -1,11 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
-
-namespace dFakto.Rest
+namespace dFakto.Rest.AspNetCore.Mvc
 {
     public enum SortOrder
     {
-        Asc,Desc
+        Asc,
+        Desc
     }
+
     public class CollectionRequest
     {
         public SortOrder Order { get; set; } = SortOrder.Asc;
