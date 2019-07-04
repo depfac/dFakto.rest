@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using dFakto.Rest.AspNetCore.Mvc;
+using dFakto.Rest.SampleApi.Tools;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -13,43 +15,58 @@ namespace dFakto.Rest.SampleApi.Controllers
     [ApiController]
     public class ValuesController : RestController
     {
-        public class MySampleValue
+        private readonly SampleRepository _repository;
+
+        public ValuesController(SampleRepository repository)
         {
-            public int Id { get; set; }
-            public string Value { get; set; }
+            _repository = repository;
         }
-        
+
+        private Resource GetSampleResource(MySampleValue sampleValue, IEnumerable<string> onlyFields = null)
+        {
+            return CreateResource(GetUriFromRoute("getbyid",new {id=sampleValue.Id}))
+                .AddLink("parent",GetUriFromRoute("getallvalues"))
+                .Merge(sampleValue,onlyFields);
+        }
+
+        private Resource GetSampleResourceCollection(
+            CollectionRequest request,
+            IEnumerable<MySampleValue> values)
+        {
+            var r = CreateResourceCollection(GetUriFromRoute("getallvalues"), request)
+                .AddEmbedded("values", values.Select(x => GetSampleResource(x, request.Fields)));
+            return r;
+        }
+
+
         // GET api/values
         [HttpGet()]
+        [Route("",Name="getallvalues")]
         public ActionResult Get([FromQuery] CollectionRequest request)
         {
-            //retrieve data
-            var total = 100;
-            var r = GetValues(total).Skip(request.Index).TakeWhile((x,y) => y < request.Limit);
-
-            return Ok(CreateResourceCollection(GetCurrentUri(), request, total).AddEmbedded("values",r.Select(x => CreateResource(GetUriFromRoute("getbyid",new {id=x.Id})).Merge(x))));
+            return Ok(GetSampleResourceCollection(request,_repository.GetValues(request.Index,request.Limit, request.Sort)));
         }
 
         // GET api/values/5
         [HttpGet("{id}",Name = "getbyid")]
-        public Resource Get(int id)
+        public Resource Get(int id, [FromQuery] ResourceRequest request)
         {
-            return CreateResource(GetCurrentUri())
-                .Merge(new MySampleValue{Id = id, Value = "Value"+id});
+            return GetSampleResource(_repository.GetById(id), request.Fields);
         }
 
         // POST api/values
         [HttpPost]
-        public CreatedResult Post()
+        public ActionResult Post(Resource resource)
         {
-            var uri = GetUriFromRoute("getbyid", new {id = 12});
-            return Created(uri,CreateResource(uri).Add("test","value"));
+            var r = GetSampleResource(_repository.Create(resource.As<MySampleValue>()));
+            return Created(r.GetSelf().Href, r);
         }
 
         // PUT api/values/5
         [HttpPut("{id}")]
-        public OkResult Put(int id, [FromBody] string value)
+        public OkResult Put(int id, [FromBody] Resource value)
         {
+            _repository.Update(id, value.As<MySampleValue>());
             return Ok();
         }
 
@@ -57,18 +74,8 @@ namespace dFakto.Rest.SampleApi.Controllers
         [HttpDelete("{id}")]
         public OkResult Delete(int id)
         {
+            _repository.DeleteById(id);
             return Ok();
-        }
-        
-        
-        private IEnumerable<MySampleValue> GetValues(int max)
-        {
-            int i = 0;
-            while (i < max)
-            {
-                i++;
-                yield return new MySampleValue{Id = i,Value = "Value" + i};
-            }
         }
     }
 }
