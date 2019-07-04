@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Xunit;
+using Xunit.Sdk;
 
 namespace dFakto.Rest.Tests
 {
@@ -49,6 +50,9 @@ namespace dFakto.Rest.Tests
             var l = r.GetLinks("self");
             Assert.NotEmpty(l);
             Assert.Equal("http://someuri",l.First().Href);
+
+            var ul = r.GetLink("self");
+            Assert.Equal("http://someuri",ul.Href);
         }
         [Fact]
         public void Test_Add_Fields()
@@ -189,16 +193,37 @@ namespace dFakto.Rest.Tests
             Assert.Throws<ArgumentNullException>(() => r.AddLink("testnull",(string)null));
             Assert.Throws<ArgumentNullException>(() => r.AddLink(null,(Link)null));
             Assert.Throws<ArgumentNullException>(() => r.AddLink(null,(string)null));
+            Assert.Throws<ArgumentNullException>(() => r.AddLinks(null,null));
+
             Assert.Throws<ArgumentNullException>(() => r.AddEmbedded(null,CreateResource()));
+            Assert.Throws<ArgumentNullException>(() => r.AddEmbedded(null,(IEnumerable<Resource>) null));
             Assert.Throws<ArgumentNullException>(() => r.AddEmbedded(string.Empty,CreateResource()));
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbedded("testnull", (Resource) null));
-            
+            Assert.Throws<ArgumentNullException>(() => r.AddEmbedded("test", (IEnumerable<Resource>) null));
+            Assert.Throws<ArgumentNullException>(() => r.AddEmbedded("test", (Resource[]) null));
             
             Assert.Throws<ArgumentNullException>(() => r.AddLink("testnull",string.Empty));
+            Assert.Throws<ArgumentNullException>(() => r.AddLinks("testnull",null));
+            Assert.Throws<ArgumentNullException>(() => r.GetEmbedded(null).ToArray());
+            Assert.Throws<ArgumentNullException>(() => r.GetEmbedded(string.Empty).ToArray());
+            Assert.Throws<ArgumentNullException>(() => r.GetLinks(null).ToArray());
+            Assert.Throws<ArgumentNullException>(() => r.GetLinks(string.Empty).ToArray());
+            Assert.Throws<ArgumentNullException>(() => r.GetField<string>(null));
+            
+            
+            Assert.Throws<ArgumentNullException>(() => r.ContainsEmbedded(null));
+            Assert.Throws<ArgumentNullException>(() => r.ContainsEmbedded(string.Empty));
+            Assert.Throws<ArgumentNullException>(() => r.ContainsLink(null));
+            Assert.Throws<ArgumentNullException>(() => r.ContainsLink(string.Empty));
+            Assert.Throws<ArgumentNullException>(() => r.ContainsField(null));
+            Assert.Throws<ArgumentNullException>(() => r.ContainsField(string.Empty));
+            Assert.Throws<ArgumentNullException>(() => r.Self(string.Empty));
+            Assert.Throws<ArgumentNullException>(() => r.Self(string.Empty));
+            Assert.Throws<ArgumentNullException>(() => r.Merge<object>(null));
+            Assert.Throws<ArgumentNullException>(() => r.Merge<object>(null,new string[]{"test"}));
         }
 
         [Fact]
-        public void Test_Add_Two_Links_With_Same_Name()
+        public void Test_Add_Multiple_Links()
         {
             var l = new Link("http://mylinkuri1");
             var l2 = new Link("http://mylinkuri2");
@@ -206,8 +231,7 @@ namespace dFakto.Rest.Tests
 
             var r = CreateResource().Self("http://testcom");
 
-            r.AddLink("sample", l);
-            r.AddLink("sample", l2);
+            r.AddLinks("sample", l, l2);
             
             var links = r.GetLinks("sample").ToArray();
             
@@ -215,15 +239,27 @@ namespace dFakto.Rest.Tests
             Assert.Equal("http://mylinkuri1",links[0].Href);
             Assert.Equal("http://mylinkuri2",links[1].Href);
             
-            
+            //Override previous links
             r.AddLink("sample", l3);
             
             links = r.GetLinks("sample").ToArray();
             
-            Assert.Equal(3, links.Length);
+            Assert.Single(links);
+            Assert.Equal("http://mylinkuri3",links[0].Href);
+
+            r.AddLinks("sample", l, l2);
+            links = r.GetLinks("sample").ToArray();
+            
+            Assert.Equal(2, links.Length);
             Assert.Equal("http://mylinkuri1",links[0].Href);
             Assert.Equal("http://mylinkuri2",links[1].Href);
-            Assert.Equal("http://mylinkuri3",links[2].Href);
+            
+            r.AddLinks("sample", l, null, l2);
+            links = r.GetLinks("sample").ToArray();
+            
+            Assert.Equal(2, links.Length);
+            Assert.Equal("http://mylinkuri1",links[0].Href);
+            Assert.Equal("http://mylinkuri2",links[1].Href);
         }
         
         [Fact]
@@ -233,7 +269,8 @@ namespace dFakto.Rest.Tests
             Assert.Empty(e.GetEmbeddedNames());
             Assert.Empty(e.GetEmbedded("not_exists"));
             
-            var r = CreateResource().Self("root").AddEmbedded("test", e);
+            var r = CreateResource().Self("root")
+                .AddEmbedded("test", e);
             
             Assert.Contains("test",r.GetEmbeddedNames());
             Assert.DoesNotContain("test_not_exists",r.GetEmbeddedNames());
@@ -243,7 +280,7 @@ namespace dFakto.Rest.Tests
             Assert.Equal("embedded",r.GetEmbedded("test").First().GetSelf().Href);
             Assert.Empty(r.GetEmbedded("test_dot_not_exists"));
 
-            r.AddEmbedded("test", e);
+            r.AddEmbedded("test", e, e);
             
             Assert.Contains("test",r.GetEmbeddedNames());
             Assert.DoesNotContain("test_not_exists",r.GetEmbeddedNames());
@@ -259,11 +296,36 @@ namespace dFakto.Rest.Tests
             
             Assert.Empty(r.GetEmbedded("test_dot_not_exists"));
             
-            r.AddEmbedded("test", e);
+            r.AddEmbedded("test", e,e,e);
             
             emm = r.GetEmbedded("test").ToArray();
 
             Assert.Equal(3, emm.Length);
+            
+            r.AddEmbedded("test", e,null,e);
+            
+            emm = r.GetEmbedded("test").ToArray();
+
+            Assert.Equal(2, emm.Length);
+
+            var rr = CreateResource();
+            rr.AddEmbedded("test", emm);
+        }
+
+        [Fact]
+        public void Test_As_Method()
+        {
+            var m = GetModel();
+            var m2 = CreateResource().Merge(m).As<MyModel>();
+            
+            Assert.Equal(m.Date,m2.Date);
+            Assert.Equal(m.Decimal,m2.Decimal);
+            Assert.Equal(m.Double,m2.Double);
+            Assert.Equal(m.Float,m2.Float);
+            Assert.Equal(m.Integer,m2.Integer);
+            Assert.Equal(m.Null,m2.Null);
+            Assert.Equal(m.Test,m2.Test);
+            Assert.Equal(m.Uri,m2.Uri);
         }
 
         [Fact]
@@ -299,11 +361,41 @@ namespace dFakto.Rest.Tests
 
         }
 
-        public Resource CreateResource()
+        [Fact]
+        public void Test_NamingConvention()
+        {
+            var r = CreateResource().Add("NAME", "hello");
+            
+            Assert.Equal("hello",r.GetField<string>("NAME"));
+            Assert.True(r.ContainsField("NAME"));
+            Assert.True(r.ContainsField("name"));
+            Assert.False(r.ContainsField("nAME"));
+
+            r.AddLink("LINK", "http://sss");
+            Assert.True(r.ContainsLink("link"));
+            Assert.True(r.ContainsLink("Link"));
+            Assert.False(r.ContainsLink("lINk"));
+
+            r.AddEmbedded("MyResource", CreateResource());
+            Assert.True(r.ContainsEmbedded("MyResource"));
+            Assert.True(r.ContainsEmbedded("myResource"));
+
+            r = CreateResource(false).Add("NAME", "hello");
+            Assert.Equal("hello",r.GetField<string>("NAME"));
+            Assert.True(r.ContainsField("NAME"));
+            Assert.False(r.ContainsField("name"));
+            Assert.False(r.ContainsField("nAME"));
+        }
+
+        public Resource CreateResource(bool overrideSpecificName = true)
         {   
+            var ccpncr = new CamelCasePropertyNamesContractResolver();
+            ccpncr.NamingStrategy.OverrideSpecifiedNames = overrideSpecificName;
+            
             var ser = new JsonSerializerSettings();
-            ser.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            ser.ContractResolver = ccpncr;
             ser.NullValueHandling = NullValueHandling.Ignore;
+            
 
             ResourceBuilder builder = new ResourceBuilder(ser);
             return builder.Create();

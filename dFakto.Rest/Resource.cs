@@ -1,8 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 
 namespace dFakto.Rest
 {
@@ -32,10 +34,15 @@ namespace dFakto.Rest
 
         public T GetField<T>(string fieldName)
         {
-            if(!_json.ContainsKey(fieldName))
+            if(string.IsNullOrWhiteSpace(fieldName))
+                throw new ArgumentNullException(nameof(fieldName));
+
+            var name = GetPropertyName(fieldName);
+            
+            if(!_json.ContainsKey(name))
                 return default(T);
 
-            var t = _json[fieldName];
+            var t = _json[name];
             
             if (t is JObject || t is JArray)
                 return t.ToObject<T>();
@@ -45,33 +52,52 @@ namespace dFakto.Rest
 
         public bool ContainsField(string name)
         {
+            if(string.IsNullOrWhiteSpace(name))
+                throw new ArgumentNullException(nameof(name));
+            
             if (name == Properties.Links || name == Properties.Embedded)
                 return false;
             
-            return _json.ContainsKey(name);
+            return _json.ContainsKey(GetPropertyName(name));
         }
 
         public bool ContainsLink(string name)
         {
-            return _links.ContainsKey(name);
+            if(string.IsNullOrWhiteSpace(name))
+                throw new ArgumentNullException(nameof(name));
+            
+            return _links.ContainsKey(GetPropertyName(name));
         }
 
         public bool ContainsEmbedded(string name)
-        {
+        {            
+            if(string.IsNullOrWhiteSpace(name))
+                throw new ArgumentNullException(nameof(name));
+            
             var e = (JObject)_json[Properties.Embedded];
             if(e == null)
                 return false;
-            return e.ContainsKey(name) ;
+            return e.ContainsKey(GetPropertyName(name));
+        }
+
+        public Link GetLink(string name)
+        {
+            return GetLinks(name).FirstOrDefault();
         }
 
         public IEnumerable<Link> GetLinks(string name)
         {
-            if (!ContainsLink(name))
+            if(string.IsNullOrWhiteSpace(name))
+                throw new ArgumentNullException(nameof(name));
+
+            string linkName = GetPropertyName(name);
+            
+            if (!ContainsLink(linkName))
             {
                 yield break;
             }
 
-            var l = _links[name];
+            var l = _links[linkName];
             
             if (l is JArray array)
             {
@@ -98,14 +124,18 @@ namespace dFakto.Rest
                 return new string[0];
             return e.Properties().Select(x => x.Name);
         }
-        
+
         public IEnumerable<string> GetFieldsNames()
         {
-            return _json.Properties().Where(x => x.Name != Properties.Links && x.Name != Properties.Embedded).Select(x => x.Name);
+            return _json.Properties().Where(x => x.Name != Properties.Links && x.Name != Properties.Embedded)
+                .Select(x => x.Name);
         }
 
         public IEnumerable<Resource> GetEmbedded(string name)
         {
+            if(string.IsNullOrWhiteSpace(name))
+                throw new ArgumentNullException(nameof(name));
+            
             if(!ContainsEmbedded(name))
                 yield break;
 
@@ -132,6 +162,12 @@ namespace dFakto.Rest
         {
             return GetLinks(Properties.Self).FirstOrDefault();
         }
+        
+        public T As<T>()
+        {
+            return _json.ToObject<T>(_serializer);
+        }
+        
 
         #endregion
 
@@ -139,15 +175,24 @@ namespace dFakto.Rest
 
         public Resource Self(string uri)
         {
+            if(string.IsNullOrWhiteSpace(uri))
+                throw new ArgumentNullException(nameof(uri));
+            
             AddLink(Properties.Self, uri);
             return this;
         }
         public Resource Merge<T>(T value) where T : class
         {
+            if(value == null)
+                throw new ArgumentNullException(nameof(value));
+
             return AddOrReplaceField(string.Empty, value, null);
         }
         public Resource Merge<T>(T value, IEnumerable<string> only) where T : class
         {
+            if(value == null)
+                throw new ArgumentNullException(nameof(value));
+
             return AddOrReplaceField(string.Empty, value, only);
         }
         public Resource Add(string propertyName, object value, IEnumerable<string> only = null)
@@ -157,8 +202,47 @@ namespace dFakto.Rest
                 throw new ArgumentNullException(nameof(propertyName));
             }
 
-            return AddOrReplaceField(propertyName, value, only);
+            return AddOrReplaceField(GetPropertyName(propertyName), value, only);
         }
+
+        public Resource AddLinks(string name, params Link[] links)
+        {
+            return AddLinks(name, (IEnumerable<Link>) links);
+        }
+
+        public Resource AddLinks(string name, IEnumerable<Link> links)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            if (links == null)
+            {
+                throw new ArgumentNullException(nameof(links));
+            }
+
+            var n = GetPropertyName(name);
+            if (_links.ContainsKey(n))
+            {
+                _links.Remove(n);
+            }
+
+            JArray array = new JArray();
+            foreach (var link in links)
+            {
+                if (link == null)
+                    continue;
+                
+                array.Add(JObject.FromObject(link, _serializer));
+            }
+
+            _links.Add(n, array);
+
+            return this;
+
+        }
+
         public Resource AddLink(string name, Link link)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -170,27 +254,14 @@ namespace dFakto.Rest
             {
                 throw new ArgumentNullException(nameof(link));
             }
-
-            var l = JObject.FromObject(link, _serializer);
-
-            if (!_links.ContainsKey(name))
+            
+            var n = GetPropertyName(name);
+            if (_links.ContainsKey(n))
             {
-                _links.Add(name,l);
+                _links.Remove(n);
             }
-            else
-            {
-                if (_links[name].Type == JTokenType.Array)
-                {
-                    ((JArray) _links[name]).Add(l);
-                }
-                else
-                {
-                    JArray array = new JArray();
-                    array.Add(_links[name]);
-                    array.Add(l);
-                    _links[name] = array;
-                }
-            }
+
+            _links.Add(n,JObject.FromObject(link, _serializer));
 
             return this;
         }
@@ -208,9 +279,42 @@ namespace dFakto.Rest
 
             return AddLink(name, new Link(href));
         }
+        
         public Resource AddEmbedded(string name, Resource resource)
         {
-            return AddEmbedded(name, new[] {resource});
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            string n = GetPropertyName(name);
+
+            
+            if (!_json.ContainsKey(Properties.Embedded))
+            {
+                if (resource != null)
+                {
+                    _links.Parent.AddAfterSelf(new JProperty(Properties.Embedded,new JObject()));
+                    
+                    var embedded = (JObject) _json[Properties.Embedded];
+                    embedded.Add(n,JObject.FromObject(resource, _serializer));
+                }
+            }
+            else
+            {
+                var embedded = (JObject) _json[Properties.Embedded];
+                
+                if (embedded.ContainsKey(n))
+                {
+                    embedded.Remove(n);
+                }
+                
+                if (resource != null)
+                {
+                    embedded.Add(n,JObject.FromObject(resource, _serializer));
+                }
+            }
+            return this;
         }
         public Resource AddEmbedded(string name, params Resource[] resources)
         {
@@ -228,36 +332,38 @@ namespace dFakto.Rest
                 throw new ArgumentNullException(nameof(resources));
             }
 
+            string n = GetPropertyName(name);
+            var array = new JArray();
+            foreach (var resource in resources)
+            {
+                if (resource == null)
+                    continue;
+
+                array.Add(JObject.FromObject(resource, _serializer));
+            }
+            
             if (!_json.ContainsKey(Properties.Embedded))
             {
-                _links.Parent.AddAfterSelf(new JProperty(Properties.Embedded,new JObject()));
+                if (array.Count > 0)
+                {
+                    _links.Parent.AddAfterSelf(new JProperty(Properties.Embedded,new JObject()));
+                    ((JObject)_json[Properties.Embedded]).Add(n,array);
+                }
             }
-            var embedded = ((JObject) _json[Properties.Embedded]);
-
-            foreach (var res in resources)
+            else
             {
-                var l = JObject.FromObject(res, _serializer);
-
-                if (!embedded.ContainsKey(name))
+                var embedded = (JObject) _json[Properties.Embedded];
+                
+                if (embedded.ContainsKey(n))
                 {
-                    embedded.Add(name, l);
+                    embedded.Remove(n);
                 }
-                else
+                
+                if (array.Count > 0)
                 {
-                    if (embedded[name].Type == JTokenType.Array)
-                    {
-                        ((JArray) embedded[name]).Add(l);
-                    }
-                    else
-                    {
-                        JArray array = new JArray();
-                        array.Add(embedded[name]);
-                        array.Add(l);
-                        embedded[name] = array;
-                    }
+                    embedded.Add(n,array);
                 }
             }
-
             return this;
         }
 
@@ -311,6 +417,15 @@ namespace dFakto.Rest
             }
 
             return this;
+        }
+
+        private string GetPropertyName(string name, bool specificName = true)
+        {
+            if (_serializer.ContractResolver is DefaultContractResolver ss)
+            {
+                return ss.NamingStrategy.GetPropertyName(name,specificName);
+            }
+            return name;
         }
 
         private static IEnumerable<KeyValuePair<string,JToken>> GetOnlyJToken(JObject value, IEnumerable<string> only)

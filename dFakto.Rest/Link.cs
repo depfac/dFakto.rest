@@ -38,7 +38,7 @@ namespace dFakto.Rest
         ///     A client SHOULD provide some notification (for example, by logging a
         ///     warning message) whenever it traverses over a link that has this
         ///     property.  The notification SHOULD include the deprecation property's
-        ///     value so that a client manitainer can easily find information about the deprecation.
+        ///     value so that a client maintainer can easily find information about the deprecation.
         /// </summary>
         public string Deprecation { get; set; }
 
@@ -57,5 +57,6 @@ namespace dFakto.Rest
         ///     Its value is a string and is intended for indicating the language of the target resource (as defined by [RFC5988]).
         /// </summary>
         public string Hreflang { get; set; }
+        
     }
 }
