@@ -74,7 +74,7 @@ namespace dFakto.Rest.Tests
         }
 
         [Fact]
-        public void Test()
+        public void Test_Merge_Only()
         {
             var r = CreateResource().Self("http://someuri").Merge(new {Field1 = "dfdf", Field2 = "test"}, new []{"Field2"});
             
@@ -94,7 +94,7 @@ namespace dFakto.Rest.Tests
         }
 
         [Fact]
-        public void Test_Add_Dictionnary_As_Property()
+        public void Test_Add_Dictionary_As_Property()
         {
             var r = CreateResource().Self("http://someuri").Add("testdic",
                 new Dictionary<string, string>() {{"1", "A"}, {"2", "B"}});
@@ -144,7 +144,7 @@ namespace dFakto.Rest.Tests
 
             var r = CreateResource().Self("http://dfdfdfd").AddLink("sample",l);
 
-            Assert.Contains("sample", r.GetLinkNames());
+            Assert.Contains("sample", r.LinkNames);
             
             var links = r.GetLinks("sample").ToList();
             
@@ -170,12 +170,12 @@ namespace dFakto.Rest.Tests
         [Fact]
         public void Fields_cannot_be_named_links_or_embedded()
         {
-            var r = CreateResource().Self("hello").AddEmbedded("test", CreateResource());
+            var r = CreateResource().Self("hello").AddEmbeddedResource("test", CreateResource());
 
             Assert.False(r.ContainsField("_links"));
             Assert.False(r.ContainsField("_embedded"));
-            Assert.DoesNotContain("_links",r.GetFieldsNames());
-            Assert.DoesNotContain("_embedded",r.GetFieldsNames());
+            Assert.DoesNotContain("_links",r.FieldsNames);
+            Assert.DoesNotContain("_embedded",r.FieldsNames);
 
             Assert.Throws<ArgumentException>(() => r.Add("_links", "test"));
             Assert.Throws<ArgumentException>(() => r.Add("_embedded", "test"));
@@ -195,23 +195,23 @@ namespace dFakto.Rest.Tests
             Assert.Throws<ArgumentNullException>(() => r.AddLink(null,(string)null));
             Assert.Throws<ArgumentNullException>(() => r.AddLinks(null,null));
 
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbedded(null,CreateResource()));
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbedded(null,(IEnumerable<Resource>) null));
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbedded(string.Empty,CreateResource()));
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbedded("test", (IEnumerable<Resource>) null));
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbedded("test", (Resource[]) null));
+            Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResource(null,CreateResource()));
+            Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResources(null,(IEnumerable<Resource>) null));
+            Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResource(string.Empty,CreateResource()));
+            Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResources("test", (IEnumerable<Resource>) null));
+            Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResources("test", (Resource[]) null));
             
             Assert.Throws<ArgumentNullException>(() => r.AddLink("testnull",string.Empty));
             Assert.Throws<ArgumentNullException>(() => r.AddLinks("testnull",null));
-            Assert.Throws<ArgumentNullException>(() => r.GetEmbedded(null).ToArray());
-            Assert.Throws<ArgumentNullException>(() => r.GetEmbedded(string.Empty).ToArray());
+            Assert.Throws<ArgumentNullException>(() => r.GetEmbeddedResources(null).ToArray());
+            Assert.Throws<ArgumentNullException>(() => r.GetEmbeddedResources(string.Empty).ToArray());
             Assert.Throws<ArgumentNullException>(() => r.GetLinks(null).ToArray());
             Assert.Throws<ArgumentNullException>(() => r.GetLinks(string.Empty).ToArray());
             Assert.Throws<ArgumentNullException>(() => r.GetField<string>(null));
             
             
-            Assert.Throws<ArgumentNullException>(() => r.ContainsEmbedded(null));
-            Assert.Throws<ArgumentNullException>(() => r.ContainsEmbedded(string.Empty));
+            Assert.Throws<ArgumentNullException>(() => r.ContainsEmbeddedResource(null));
+            Assert.Throws<ArgumentNullException>(() => r.ContainsEmbeddedResource(string.Empty));
             Assert.Throws<ArgumentNullException>(() => r.ContainsLink(null));
             Assert.Throws<ArgumentNullException>(() => r.ContainsLink(string.Empty));
             Assert.Throws<ArgumentNullException>(() => r.ContainsField(null));
@@ -266,50 +266,55 @@ namespace dFakto.Rest.Tests
         public void Test_Add_Embedded()
         {
             var e = CreateResource().Self("embedded");
-            Assert.Empty(e.GetEmbeddedNames());
-            Assert.Empty(e.GetEmbedded("not_exists"));
+            Assert.Empty(e.EmbeddedResourceNames);
+            Assert.Empty(e.GetEmbeddedResources("not_exists"));
             
             var r = CreateResource().Self("root")
-                .AddEmbedded("test", e);
+                .AddEmbeddedResource("test", e);
             
-            Assert.Contains("test",r.GetEmbeddedNames());
-            Assert.DoesNotContain("test_not_exists",r.GetEmbeddedNames());
-            Assert.Single(r.GetEmbeddedNames());
-            Assert.True(r.ContainsEmbedded("test"));
-            Assert.False(r.ContainsEmbedded("test_not_exists"));
-            Assert.Equal("embedded",r.GetEmbedded("test").First().GetSelf().Href);
-            Assert.Empty(r.GetEmbedded("test_dot_not_exists"));
+            Assert.Contains("test",r.EmbeddedResourceNames);
+            Assert.DoesNotContain("test_not_exists",r.EmbeddedResourceNames);
+            Assert.Single(r.EmbeddedResourceNames);
+            Assert.True(r.ContainsEmbeddedResource("test"));
+            Assert.False(r.ContainsEmbeddedResource("test_not_exists"));
+            Assert.Equal("embedded",r.GetEmbeddedResources("test").First().GetSelf().Href);
+            Assert.Empty(r.GetEmbeddedResources("test_dot_not_exists"));
 
-            r.AddEmbedded("test", e, e);
+            r.AddEmbeddedResources("test", e, e);
             
-            Assert.Contains("test",r.GetEmbeddedNames());
-            Assert.DoesNotContain("test_not_exists",r.GetEmbeddedNames());
-            Assert.Single(r.GetEmbeddedNames());
-            Assert.True(r.ContainsEmbedded("test"));
-            Assert.False(r.ContainsEmbedded("test_not_exists"));
+            Assert.Contains("test",r.EmbeddedResourceNames);
+            Assert.DoesNotContain("test_not_exists",r.EmbeddedResourceNames);
+            Assert.Single(r.EmbeddedResourceNames);
+            Assert.True(r.ContainsEmbeddedResource("test"));
+            Assert.False(r.ContainsEmbeddedResource("test_not_exists"));
 
-            var emm = r.GetEmbedded("test").ToArray();
+            var emm = r.GetEmbeddedResources("test").ToArray();
             
             Assert.Equal(2,emm.Length);
             Assert.Equal("embedded", emm[0].GetSelf().Href);
             Assert.Equal("embedded", emm[1].GetSelf().Href);
             
-            Assert.Empty(r.GetEmbedded("test_dot_not_exists"));
+            Assert.Empty(r.GetEmbeddedResources("test_dot_not_exists"));
             
-            r.AddEmbedded("test", e,e,e);
+            r.AddEmbeddedResources("test", e,e,e);
             
-            emm = r.GetEmbedded("test").ToArray();
+            emm = r.GetEmbeddedResources("test").ToArray();
 
             Assert.Equal(3, emm.Length);
             
-            r.AddEmbedded("test", e,null,e);
+            r.AddEmbeddedResources("test", e,null,e);
             
-            emm = r.GetEmbedded("test").ToArray();
+            emm = r.GetEmbeddedResources("test").ToArray();
 
             Assert.Equal(2, emm.Length);
 
             var rr = CreateResource();
-            rr.AddEmbedded("test", emm);
+            rr.AddEmbeddedResources("test", emm);
+
+
+            e.AddEmbeddedResource("testsingle",CreateResource());
+            
+            Assert.NotNull(e.GetEmbeddedResource("testsingle")); 
         }
 
         [Fact]
@@ -345,9 +350,9 @@ namespace dFakto.Rest.Tests
                 .Merge(GetModel())
                 .Add("testurl", "http://dfdfdfdf")
                 .Merge(new MyModel {Test = "toto"}, new[] {"test"})
-                .AddEmbedded("same", embedde)
-                .AddEmbedded("same", embedde)
-                .AddEmbedded("same", embedde)
+                .AddEmbeddedResource("same", embedde)
+                .AddEmbeddedResource("same", embedde)
+                .AddEmbeddedResource("same", embedde)
                 .AddLink("same", new Link(embedde.GetSelf().Href) {Name = "coucou"})
                 .AddLink("same", new Link(embedde.GetSelf().Href) {Name = "toto"});
             
@@ -376,9 +381,9 @@ namespace dFakto.Rest.Tests
             Assert.True(r.ContainsLink("Link"));
             Assert.False(r.ContainsLink("lINk"));
 
-            r.AddEmbedded("MyResource", CreateResource());
-            Assert.True(r.ContainsEmbedded("MyResource"));
-            Assert.True(r.ContainsEmbedded("myResource"));
+            r.AddEmbeddedResource("MyResource", CreateResource());
+            Assert.True(r.ContainsEmbeddedResource("MyResource"));
+            Assert.True(r.ContainsEmbeddedResource("myResource"));
 
             r = CreateResource(false).Add("NAME", "hello");
             Assert.Equal("hello",r.GetField<string>("NAME"));

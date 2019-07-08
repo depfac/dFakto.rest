@@ -34,7 +34,7 @@ namespace dFakto.Rest.SampleApi.Controllers
             IEnumerable<MySampleValue> values)
         {
             var r = CreateResourceCollection(GetUriFromRoute("getallvalues"), request)
-                .AddEmbedded("values", values.Select(x => GetSampleResource(x, request.Fields)));
+                .AddEmbeddedResources("values", values.Select(x => GetSampleResource(x, request.Fields)));
             return r;
         }
 

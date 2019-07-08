@@ -32,6 +32,31 @@ namespace dFakto.Rest
 
         #region Accessors
 
+        public IEnumerable<string> LinkNames
+        {
+            get { return _links.Properties().Select(x => x.Name); }
+        }
+
+        public IEnumerable<string> EmbeddedResourceNames
+        {
+            get
+            {
+                var e = (JObject) _json[Properties.Embedded];
+                if (e == null)
+                    return new string[0];
+                return e.Properties().Select(x => x.Name);
+            }
+        }
+
+        public IEnumerable<string> FieldsNames
+        {
+            get
+            {
+                return _json.Properties().Where(x => x.Name != Properties.Links && x.Name != Properties.Embedded)
+                    .Select(x => x.Name);
+            }
+        }
+
         public T GetField<T>(string fieldName)
         {
             if(string.IsNullOrWhiteSpace(fieldName))
@@ -69,7 +94,7 @@ namespace dFakto.Rest
             return _links.ContainsKey(GetPropertyName(name));
         }
 
-        public bool ContainsEmbedded(string name)
+        public bool ContainsEmbeddedResource(string name)
         {            
             if(string.IsNullOrWhiteSpace(name))
                 throw new ArgumentNullException(nameof(name));
@@ -112,31 +137,12 @@ namespace dFakto.Rest
             }
         }
 
-        public IEnumerable<string> GetLinkNames()
-        {
-            return _links.Properties().Select(x => x.Name);
-        }
-        
-        public IEnumerable<string> GetEmbeddedNames()
-        {
-            var e = (JObject)_json[Properties.Embedded];
-            if(e == null)
-                return new string[0];
-            return e.Properties().Select(x => x.Name);
-        }
-
-        public IEnumerable<string> GetFieldsNames()
-        {
-            return _json.Properties().Where(x => x.Name != Properties.Links && x.Name != Properties.Embedded)
-                .Select(x => x.Name);
-        }
-
-        public IEnumerable<Resource> GetEmbedded(string name)
+        public IEnumerable<Resource> GetEmbeddedResources(string name)
         {
             if(string.IsNullOrWhiteSpace(name))
                 throw new ArgumentNullException(nameof(name));
             
-            if(!ContainsEmbedded(name))
+            if(!ContainsEmbeddedResource(name))
                 yield break;
 
             var e = ((JObject)_json[Properties.Embedded])[name];
@@ -158,9 +164,17 @@ namespace dFakto.Rest
             }
         }
 
+        public Resource GetEmbeddedResource(string name)
+        {
+            if(string.IsNullOrWhiteSpace(name))
+                throw new ArgumentNullException(nameof(name));
+
+            return GetEmbeddedResources(name).FirstOrDefault();
+        }
+
         public Link GetSelf()
         {
-            return GetLinks(Properties.Self).FirstOrDefault();
+            return GetLink(Properties.Self);
         }
         
         public T As<T>()
@@ -168,7 +182,6 @@ namespace dFakto.Rest
             return _json.ToObject<T>(_serializer);
         }
         
-
         #endregion
 
         #region Modifiers
@@ -280,7 +293,7 @@ namespace dFakto.Rest
             return AddLink(name, new Link(href));
         }
         
-        public Resource AddEmbedded(string name, Resource resource)
+        public Resource AddEmbeddedResource(string name, Resource resource)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -316,11 +329,11 @@ namespace dFakto.Rest
             }
             return this;
         }
-        public Resource AddEmbedded(string name, params Resource[] resources)
+        public Resource AddEmbeddedResources(string name, params Resource[] resources)
         {
-            return AddEmbedded(name, (IEnumerable<Resource>) resources);
+            return AddEmbeddedResources(name, (IEnumerable<Resource>) resources);
         }
-        public Resource AddEmbedded(string name, IEnumerable<Resource> resources)
+        public Resource AddEmbeddedResources(string name, IEnumerable<Resource> resources)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
