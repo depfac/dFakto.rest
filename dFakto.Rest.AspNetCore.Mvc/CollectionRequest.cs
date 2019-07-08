@@ -1,16 +1,23 @@
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
+
 namespace dFakto.Rest.AspNetCore.Mvc
 {
-    public enum SortOrder
+    public class CollectionRequest : ResourceRequest
     {
-        Asc,
-        Desc
-    }
-
-    public class CollectionRequest
-    {
-        public SortOrder Order { get; set; } = SortOrder.Asc;
-        public string Sort { get; set; } = string.Empty;
+        /// <summary>
+        /// Comma separated list of fields to sort. If field name starts with a '-', the sort must be descending
+        /// </summary>
+        public string[] Sort { get; set; } = new string[0];
+        
+        /// <summary>
+        /// Page document index
+        /// </summary>
         public int Index { get; set; } = 0;
+
+        /// <summary>
+        /// Maximum number of resources to return in the result
+        /// </summary>
         public int Limit { get; set; } = 10;
     }
 }

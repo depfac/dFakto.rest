@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -7,30 +6,46 @@ namespace dFakto.Rest.AspNetCore.Mvc
 {
     public class RestController : ControllerBase
     {
+        protected Resource CreateResource()
+        {
+            return HttpContext.RequestServices.GetService<ResourceBuilder>().Create();
+        }
+        
         protected Resource CreateResource(string uri)
         {
-            return HttpContext.RequestServices.GetService<ResourceBuilder>().Create().Self(uri);
+            return CreateResource().Self(uri);
         }
         
         protected Resource CreateResourceCollection(string uri, CollectionRequest request, long? total = null)
         {
-            var b = HttpContext.RequestServices.GetService<ResourceBuilder>();
-            var r = b.Create()
-                .Self(uri)
-                .Merge(request);
-            
-            if(total.HasValue)
+            var r = CreateResource(uri).Merge(request);
+                
+            if (request.Index > 0)
             {
-                r.Add("total", total.Value);
+                int i = request.Index - request.Limit;
+
+                r.AddLink("prev", uri + $"?index={(i < 0 ? 0 : i)}&limit={request.Limit}");
             }
 
+            if (total == null || request.Index + request.Limit <= total)
+            {
+                r.AddLink("next",uri + $"?index={(request.Index+request.Limit)}&limit={request.Limit}");
+            }
+
+            r.Add("total", total);
+            
             return r;
         }
-        
-        protected string GetUriFromRoute(string routeName, object parameters)
+
+        protected string GetUriFromRoute(string routeName, object parameters = null)
         {
+
+            string routeUrl = Url.RouteUrl(routeName, parameters);
+            if (string.IsNullOrWhiteSpace(routeUrl))
+                return string.Empty;
+            
             var r = Url.ActionContext.HttpContext.Request;
-            return $"{r.Scheme}://{r.Host.ToString()}{Url.RouteUrl(routeName, parameters).ToLower()}";
+            return $"{r.Scheme}://{r.Host.ToString()}{routeUrl.ToLower()}";
         }
 
         protected string GetCurrentUri()
