@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -455,5 +457,17 @@ namespace dFakto.Rest
         }
 
         #endregion
+
+        public async Task WriteToAsync(Stream stream)
+        {
+            if(stream == null)
+                throw new ArgumentNullException(nameof(stream));
+            
+            using(StreamWriter writer = new StreamWriter(stream))
+            using(JsonTextWriter jsonWriter = new JsonTextWriter(writer))
+            {
+                await _json.WriteToAsync(jsonWriter);
+            }
+        }
     }
 }
