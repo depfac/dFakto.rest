@@ -86,12 +86,12 @@ namespace dFakto.Rest
             return _json.ContainsKey(GetPropertyName(name));
         }
 
-        public bool ContainsLink(string name)
+        public bool ContainsLink(string rel)
         {
-            if(string.IsNullOrWhiteSpace(name))
-                throw new ArgumentNullException(nameof(name));
+            if(string.IsNullOrWhiteSpace(rel))
+                throw new ArgumentNullException(nameof(rel));
             
-            return _links.ContainsKey(GetPropertyName(name));
+            return _links.ContainsKey(GetPropertyName(rel));
         }
 
         public bool ContainsEmbeddedResource(string name)
@@ -105,17 +105,17 @@ namespace dFakto.Rest
             return e.ContainsKey(GetPropertyName(name));
         }
 
-        public Link GetLink(string name)
+        public Link GetLink(string rel)
         {
-            return GetLinks(name).FirstOrDefault();
+            return GetLinks(rel).FirstOrDefault();
         }
 
-        public IEnumerable<Link> GetLinks(string name)
+        public IEnumerable<Link> GetLinks(string rel)
         {
-            if(string.IsNullOrWhiteSpace(name))
-                throw new ArgumentNullException(nameof(name));
+            if(string.IsNullOrWhiteSpace(rel))
+                throw new ArgumentNullException(nameof(rel));
 
-            string linkName = GetPropertyName(name);
+            string linkName = GetPropertyName(rel);
             
             if (!ContainsLink(linkName))
             {
