@@ -1,7 +1,7 @@
 using System;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace dFakto.Rest.AspNetCore.Mvc
+namespace dFakto.Rest.AspNetCore.Mvc.DelimitedQueryString
 {
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
     public class DelimitedQueryStringAttribute : Attribute, IResourceFilter

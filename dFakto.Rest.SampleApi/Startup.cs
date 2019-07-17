@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using dFakto.Rest.AspNetCore.Mvc;
+using dFakto.Rest.AspNetCore.Mvc.DelimitedQueryString;
 using dFakto.Rest.SampleApi.Tools;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

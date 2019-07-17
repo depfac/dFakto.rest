@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace dFakto.Rest.AspNetCore.Mvc
+namespace dFakto.Rest.AspNetCore.Mvc.DelimitedQueryString
 {
     /// <summary>
     /// A <see cref="IValueProviderFactory"/> that creates <see cref="IValueProvider"/> instances that
