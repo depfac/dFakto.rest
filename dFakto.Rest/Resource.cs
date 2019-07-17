@@ -436,7 +436,7 @@ namespace dFakto.Rest
         {
             if (_serializer.ContractResolver is DefaultContractResolver ss)
             {
-                return ss.NamingStrategy.GetPropertyName(name,specificName);
+                return ss.NamingStrategy?.GetPropertyName(name,specificName) ?? name;
             }
             return name;
         }
