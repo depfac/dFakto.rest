@@ -14,7 +14,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
                 var o = x.GetService<IOptions<MvcJsonOptions>>();
                 return o != null ? o.Value.SerializerSettings : new JsonSerializerSettings();
             });
-            services.AddTransient(x => new ResourceBuilder(x.GetService<JsonSerializerSettings>()));
+            services.AddSingleton(x => new ResourceBuilder(x.GetService<JsonSerializerSettings>()));
 
             return services;
         }
