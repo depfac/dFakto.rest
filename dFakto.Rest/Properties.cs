@@ -1,6 +1,6 @@
 namespace dFakto.Rest
 {
-    internal static class Properties
+    public static class Properties
     {
         public const string Links = "_links";
         public const string Embedded = "_embedded";
