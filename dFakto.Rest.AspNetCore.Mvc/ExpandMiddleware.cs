@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
@@ -72,7 +74,6 @@ namespace dFakto.Rest.AspNetCore.Mvc
                                 }
                                 
                                 //Load Resource
-                                context.Request.Headers.TryGetValue("Authorization", out var auth);
 
                                 var url = new UriBuilder(resource.GetLink(name).Href);
 
@@ -93,7 +94,8 @@ namespace dFakto.Rest.AspNetCore.Mvc
 
                                 _logger.LogInformation($"Loading Resource at {url}");
                                 
-                                var embeddedResource = await GetResourceAsync(url.Uri, auth);
+                                context.Request.Headers.TryGetValue("Authorization", out var auth);
+                                var embeddedResource = await GetResourceAsync(url.Uri, context.Request.Cookies, auth);
                                 if (embeddedResource != null)
                                 {
                                     _logger.LogDebug("Resource retrieved, adding to response");
@@ -118,17 +120,32 @@ namespace dFakto.Rest.AspNetCore.Mvc
             }
         }
 
-        private async Task<Resource> GetResourceAsync(Uri uri, string authorization = null)
+        private async Task<Resource> GetResourceAsync(
+            Uri uri, 
+            IRequestCookieCollection requestCookies,
+            string authorization = null)
         {
             try
             {
-                using (HttpClient client = new HttpClient())
+                HttpClientHandler handler = new HttpClientHandler();
+                handler.CookieContainer = new CookieContainer();
+                foreach (var cookie in requestCookies)
                 {
-                    client.DefaultRequestHeaders.Accept.Clear();
-                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    _logger.LogDebug("Adding cookie " + cookie.Key + " and domain " + uri.Host);
+                    handler.CookieContainer.Add(new Cookie(cookie.Key,cookie.Value){Domain = uri.Host});
+                }
+                ;
+                using (HttpClient client = new HttpClient(handler))
+                {
+                    HttpRequestMessage request = new HttpRequestMessage();
+                    request.Method = HttpMethod.Get;
+                    request.RequestUri = uri;
+                    request.Headers.Accept.Clear();
+                    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                     if (!string.IsNullOrEmpty(authorization))
                     {
-                        client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", authorization);
+                        _logger.LogDebug("Adding Authorization header");
+                        request.Headers.TryAddWithoutValidation("Authorization", authorization);
                     }
 
                     HttpResponseMessage response = await client.GetAsync(uri);
