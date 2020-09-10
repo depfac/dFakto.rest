@@ -106,9 +106,10 @@ namespace dFakto.Rest.AspNetCore.Mvc
                         }
                     }
 
+                    context.Response.Body = origin;
+                    
                     if (changed)
                     {
-                        context.Response.Body = origin;
                         await resource.WriteToAsync(context.Response.Body);
                     }
                     else
