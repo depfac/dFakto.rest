@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
-
 namespace dFakto.Rest.AspNetCore.Mvc
 {
     public class CollectionRequest : ResourceRequest

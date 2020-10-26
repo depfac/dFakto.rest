@@ -460,14 +460,16 @@ namespace dFakto.Rest
 
         public async Task WriteToAsync(Stream stream)
         {
-            if(stream == null)
+            if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
-            
-            using(StreamWriter writer = new StreamWriter(stream))
-            using(JsonTextWriter jsonWriter = new JsonTextWriter(writer))
-            {
-                await _json.WriteToAsync(jsonWriter);
-            }
+
+            StreamWriter writer = new StreamWriter(stream);
+            JsonTextWriter jsonWriter = new JsonTextWriter(writer);
+
+            await _json.WriteToAsync(jsonWriter);
+
+            await jsonWriter.FlushAsync();
+            await writer.FlushAsync();
         }
     }
 }

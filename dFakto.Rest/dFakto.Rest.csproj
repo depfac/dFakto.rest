@@ -11,6 +11,7 @@
         <RepositoryType>git</RepositoryType>
         <PackageReleaseNotes>First draft</PackageReleaseNotes>
         <Title>dFakto.Rest</Title>
+        <LangVersion>latestmajor</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

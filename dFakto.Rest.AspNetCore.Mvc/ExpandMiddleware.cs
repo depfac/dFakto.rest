@@ -1,15 +1,13 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace dFakto.Rest.AspNetCore.Mvc
 {
@@ -22,11 +20,11 @@ namespace dFakto.Rest.AspNetCore.Mvc
         private readonly ResourceBuilder _builder;
         private readonly ILogger<ExpandMiddleware> _logger;
 
-        public ExpandMiddleware(RequestDelegate next,IOptions<MvcJsonOptions> options, ILogger<ExpandMiddleware> logger)
+        public ExpandMiddleware(RequestDelegate next, ResourceBuilder builder, ILogger<ExpandMiddleware> logger)
         {
             _next = next;
             _logger = logger;
-            _builder = new ResourceBuilder(options.Value.SerializerSettings);
+            _builder = builder;
         }
 
         // IMyScopedService is injected into Invoke
@@ -110,7 +108,13 @@ namespace dFakto.Rest.AspNetCore.Mvc
                     
                     if (changed)
                     {
-                        await resource.WriteToAsync(context.Response.Body);
+                        using (var ms = new MemoryStream())
+                        {
+                            await resource.WriteToAsync(ms);
+                            ms.Seek(0, SeekOrigin.Begin);
+                            context.Response.ContentLength = ms.Length;
+                            await ms.CopyToAsync(context.Response.Body);
+                        }
                     }
                     else
                     {
