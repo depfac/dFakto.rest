@@ -139,7 +139,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
                     _logger.LogDebug("Adding cookie " + cookie.Key + " and domain " + uri.Host);
                     handler.CookieContainer.Add(new Cookie(cookie.Key,cookie.Value){Domain = uri.Host});
                 }
-                ;
+                
                 using (HttpClient client = new HttpClient(handler))
                 {
                     HttpRequestMessage request = new HttpRequestMessage();
@@ -152,8 +152,8 @@ namespace dFakto.Rest.AspNetCore.Mvc
                         _logger.LogDebug("Adding Authorization header");
                         request.Headers.TryAddWithoutValidation("Authorization", authorization);
                     }
-
-                    HttpResponseMessage response = await client.GetAsync(uri);
+                    
+                    HttpResponseMessage response = await client.SendAsync(request);
                     if (response.IsSuccessStatusCode)
                     {
                         return await _builder.LoadAsync(await response.Content.ReadAsStreamAsync());
