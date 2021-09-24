@@ -25,7 +25,10 @@ namespace dFakto.Rest.SampleApi
         {
             services.AddLogging();
             services.AddControllers(
-                options => options.ValueProviderFactories.AddDelimitedValueProviderFactory(',', '|'))
+                options =>
+                {
+                    options.ValueProviderFactories.AddDelimitedValueProviderFactory(',', '|');
+                })
                 .AddNewtonsoftJson(x =>
                 {
                     x.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;

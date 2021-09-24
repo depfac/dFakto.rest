@@ -26,6 +26,10 @@ namespace dFakto.Rest.SampleApi.Controllers
         {
             return CreateResource(GetUriFromRoute("getbyid",new {id=sampleValue.Id}))
                 .AddLink("parent",GetUriFromRoute("getallvalues"))
+                .AddLink("rename",new Link(GetUriFromRoute("getallvalues"))
+                {
+                    AllowedVerbs = AllowedVerbs.Get|AllowedVerbs.Delete
+                })
                 .Merge(sampleValue,onlyFields);
         }
 
@@ -44,7 +48,7 @@ namespace dFakto.Rest.SampleApi.Controllers
         [Route("",Name="getallvalues")]
         public ActionResult Get([FromQuery] CollectionRequest request)
         {
-            return Ok(GetSampleResourceCollection(request,_repository.GetValues(request.Index,request.Limit, request.Sort)));
+            return Ok(GetSampleResourceCollection(request,_repository.List(new CollectionRequestSpecification<MySampleValue>(request))));
         }
 
         // GET api/values/5

@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Ardalis.Specification;
+using dFakto.Rest.AspNetCore.Mvc;
 using dFakto.Rest.SampleApi.Controllers;
 using Microsoft.AspNetCore.Server.Kestrel.Core.Internal;
 
@@ -27,44 +31,11 @@ namespace dFakto.Rest.SampleApi.Tools
             _store.AddRange(GetValues(1000));
         }
         
-        public IEnumerable<MySampleValue> GetValues(int index, int max, string[] sort = null)
+        public IEnumerable<MySampleValue> List(ISpecification<MySampleValue> specification)
         {
-            IOrderedEnumerable<MySampleValue> str = _store.OrderBy(x => x.Value);
-            if (sort != null)
-            {
-                for (int i = 0; i < sort.Length; i++)
-                {
-                    var s = sort[i];
-                    bool desc = false;
-                    if (s.StartsWith('-'))
-                    {
-                        desc = true;
-                        s = s.Substring(1);
-                    }
-                    switch (s)
-                    {
-                        case "date":
-                            str = i == 0
-                                ? (desc ? str.OrderByDescending(x => x.SomeDate) : str.OrderBy(x => x.SomeDate))
-                                : (desc ? str.ThenByDescending(x => x.SomeDate) : str.ThenBy(x => x.SomeDate));
-                            break;
-                        case "long":
-                            str = i == 0
-                                ? (desc ? str.OrderByDescending(x => x.SomeLong) : str.OrderBy(x => x.SomeLong))
-                                : (desc ? str.ThenByDescending(x => x.SomeLong) : str.ThenBy(x => x.SomeLong));
-                            break;
-                        default:
-                            str = i == 0
-                                ? (desc ? str.OrderByDescending(x => x.Value) : str.OrderBy(x => x.Value))
-                                : (desc ? str.ThenByDescending(x => x.Value) : str.ThenBy(x => x.Value));
-                            break;
-                    }
-                }
-            }
-            
-            return str.Skip(index).TakeWhile((x,y) => y < max);
+            return specification.Evaluate(_store);
         }
-
+        
         public MySampleValue GetById(int id)
         {
             return _store.FirstOrDefault(x => x.Id == id);
