@@ -3,7 +3,7 @@ using System;
 namespace dFakto.Rest
 {
     [Flags]
-    public enum Right
+    public enum Rights
     {
         All   = 0,
         Get    = 1,

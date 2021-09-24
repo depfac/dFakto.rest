@@ -11,58 +11,68 @@ namespace dFakto.Rest
 {
     public class LinksConverter : JsonConverter
     {
+        private const string HrefPropertyName = "href";
+        private const string DeprecationPropertyName = "deprecation";
+        private const string LangPropertyName = "lang";
+        private const string NamePropertyName = "name";
+        private const string ProfilePropertyName = "profile";
+        private const string TemplatedPropertyName = "templated";
+        private const string TitlePropertyName = "title";
+        private const string TypePropertyName = "type";
+        private const string RightsPropertyName = "verbs";
+        
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             if (value is Link link)
             {
                 writer.WriteStartObject();
-                writer.WritePropertyName("href");
+                writer.WritePropertyName(HrefPropertyName);
                 writer.WriteValue(link.Href);
                 if (!string.IsNullOrWhiteSpace(link.Deprecation))
                 {
-                    writer.WritePropertyName("deprecation");
+                    writer.WritePropertyName(DeprecationPropertyName);
                     writer.WriteValue(link.Deprecation);
                 }
 
                 if (!string.IsNullOrWhiteSpace(link.Hreflang))
                 {
-                    writer.WritePropertyName("lang");
+                    writer.WritePropertyName(LangPropertyName);
                     writer.WriteValue(link.Hreflang);
                 }
 
                 if (!string.IsNullOrWhiteSpace(link.Name))
                 {
-                    writer.WritePropertyName("name");
+                    writer.WritePropertyName(NamePropertyName);
                     writer.WriteValue(link.Name);
                 }
 
                 if (!string.IsNullOrWhiteSpace(link.Profile))
                 {
-                    writer.WritePropertyName("profile");
+                    writer.WritePropertyName(ProfilePropertyName);
                     writer.WriteValue(link.Profile);
                 }
 
                 if (link.Templated.HasValue && link.Templated.Value)
                 {
-                    writer.WritePropertyName("templated");
+                    writer.WritePropertyName(TemplatedPropertyName);
                     writer.WriteValue(link.Templated);
                 }
 
                 if (!string.IsNullOrWhiteSpace(link.Title))
                 {
-                    writer.WritePropertyName("title");
+                    writer.WritePropertyName(TitlePropertyName);
                     writer.WriteValue(link.Title);
                 }
 
                 if (!string.IsNullOrWhiteSpace(link.Type))
                 {
-                    writer.WritePropertyName("type");
+                    writer.WritePropertyName(TypePropertyName);
                     writer.WriteValue(link.Type);
                 }
 
-                if (link.Rights != Right.All)
+                if (link.Rights != Rights.All)
                 {
-                    writer.WritePropertyName("rights");                
+                    writer.WritePropertyName(RightsPropertyName);                
                     writer.WriteStartArray();
                     foreach (var r in link.Rights.ToString().Split(','))
                     {
@@ -82,25 +92,25 @@ namespace dFakto.Rest
             if (o == null)
                 return null;
 
-            var r = Right.All;
-            var rightArray = o.Property("rights");
+            var r = Rights.All;
+            var rightArray = o.Property(RightsPropertyName);
             if (rightArray != null && rightArray.Value is JArray ra)
             {
                 foreach (var ri in ra)
                 {
-                    r |= (Right) Enum.Parse(typeof(Right), ri.Value<string>());
+                    r |= (Rights) Enum.Parse(typeof(Rights), ri.Value<string>());
                 }
             }
             
-            return new Link(o.Value<string>("href"))
+            return new Link(o.Value<string>(HrefPropertyName))
             {
-                Deprecation = o.Value<string>("deprecation"),
-                Hreflang = o.Value<string>("lang"),
-                Name = o.Value<string>("name"),
-                Profile = o.Value<string>("profile"),
-                Templated = o.Value<bool>("templated"),
-                Title = o.Value<string>("title"),
-                Type = o.Value<string>("type"),
+                Deprecation = o.Value<string>(DeprecationPropertyName),
+                Hreflang = o.Value<string>(LangPropertyName),
+                Name = o.Value<string>(NamePropertyName),
+                Profile = o.Value<string>(ProfilePropertyName),
+                Templated = o.Value<bool>(TemplatedPropertyName),
+                Title = o.Value<string>(TitlePropertyName),
+                Type = o.Value<string>(TypePropertyName),
                 Rights = r
             };
         }
