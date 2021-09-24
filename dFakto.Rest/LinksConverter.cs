@@ -70,11 +70,11 @@ namespace dFakto.Rest
                     writer.WriteValue(link.Type);
                 }
 
-                if (link.Rights != Rights.All)
+                if (link.AllowedVerbs != AllowedVerbs.All)
                 {
                     writer.WritePropertyName(RightsPropertyName);                
                     writer.WriteStartArray();
-                    foreach (var r in link.Rights.ToString().Split(','))
+                    foreach (var r in link.AllowedVerbs.ToString().Split(','))
                     {
                         writer.WriteValue(r.Trim());
                     }
@@ -92,13 +92,13 @@ namespace dFakto.Rest
             if (o == null)
                 return null;
 
-            var r = Rights.All;
+            var r = AllowedVerbs.All;
             var rightArray = o.Property(RightsPropertyName);
             if (rightArray != null && rightArray.Value is JArray ra)
             {
                 foreach (var ri in ra)
                 {
-                    r |= (Rights) Enum.Parse(typeof(Rights), ri.Value<string>());
+                    r |= (AllowedVerbs) Enum.Parse(typeof(AllowedVerbs), ri.Value<string>());
                 }
             }
             
@@ -111,7 +111,7 @@ namespace dFakto.Rest
                 Templated = o.Value<bool>(TemplatedPropertyName),
                 Title = o.Value<string>(TitlePropertyName),
                 Type = o.Value<string>(TypePropertyName),
-                Rights = r
+                AllowedVerbs = r
             };
         }
 

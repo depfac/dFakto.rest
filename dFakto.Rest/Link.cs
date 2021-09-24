@@ -9,7 +9,7 @@ namespace dFakto.Rest
         public Link(string href)
         {
             Href = href;
-            Rights = Rest.Rights.All;
+            AllowedVerbs = Rest.AllowedVerbs.All;
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace dFakto.Rest
         /// </summary>
         public string Hreflang { get; set; }
         
-        public Rights Rights { get; set; }
+        public AllowedVerbs AllowedVerbs { get; set; }
         
     }
 }
