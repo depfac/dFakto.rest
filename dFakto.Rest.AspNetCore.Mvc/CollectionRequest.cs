@@ -1,3 +1,6 @@
+using System;
+using Microsoft.AspNetCore.Mvc;
+
 namespace dFakto.Rest.AspNetCore.Mvc
 {
     public class CollectionRequest : ResourceRequest
@@ -5,7 +8,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
         /// <summary>
         /// Comma separated list of fields to sort. If field name starts with a '-', the sort must be descending
         /// </summary>
-        public string[] Sort { get; set; } = new string[0];
+        public string[] Sort { get; set; } = Array.Empty<string>();
         
         /// <summary>
         /// Page document index
@@ -16,5 +19,8 @@ namespace dFakto.Rest.AspNetCore.Mvc
         /// Maximum number of resources to return in the result
         /// </summary>
         public int Limit { get; set; } = 10;
+
+        [ModelBinder(BinderType = typeof(FilterModelBinder))]
+        public Filter Filter { get; set; }
     }
 }

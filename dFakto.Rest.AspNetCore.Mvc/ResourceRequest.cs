@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 
 namespace dFakto.Rest.AspNetCore.Mvc
@@ -12,7 +13,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
         /// <summary>
         /// List of links that need to be expanded
         /// </summary>
-        public string[] Expand { get; set; } = new string[0];
+        public string[] Expand { get; set; } = Array.Empty<string>();
         
         /// <summary>
         /// List of fields that need to be returned by api.
