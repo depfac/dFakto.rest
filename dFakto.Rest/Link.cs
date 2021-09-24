@@ -1,12 +1,15 @@
-using System;
+using System.ComponentModel;
+using Newtonsoft.Json;
 
 namespace dFakto.Rest
 {
+    [JsonConverter(typeof(LinksConverter))]
     public class Link
     {
         public Link(string href)
         {
             Href = href;
+            Rights = Right.All;
         }
 
         /// <summary>
@@ -57,6 +60,8 @@ namespace dFakto.Rest
         ///     Its value is a string and is intended for indicating the language of the target resource (as defined by [RFC5988]).
         /// </summary>
         public string Hreflang { get; set; }
+        
+        public Right Rights { get; set; }
         
     }
 }

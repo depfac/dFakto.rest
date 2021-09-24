@@ -139,7 +139,8 @@ namespace dFakto.Rest.Tests
                 Profile = "http://myprofile",
                 Templated = true,
                 Title = "Sample link",
-                Type = "application/pdf"
+                Type = "application/pdf",
+                Rights = Right.Delete|Right.Put
             };
 
             var r = CreateResource().Self("http://dfdfdfd").AddLink("sample",l);
@@ -157,6 +158,7 @@ namespace dFakto.Rest.Tests
             Assert.Equal(l.Templated, links[0].Templated);
             Assert.Equal(l.Title, links[0].Title);
             Assert.Equal(l.Type, links[0].Type);
+            Assert.Equal(l.Rights, links[0].Rights);
         }
 
         [Fact]
