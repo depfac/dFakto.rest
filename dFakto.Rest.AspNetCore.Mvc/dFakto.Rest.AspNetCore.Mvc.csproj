@@ -20,7 +20,7 @@
     </ItemGroup>
     
     <ItemGroup>
-      <ProjectReference Include="..\dFakto.Rest\dFakto.Rest.csproj" />
+      <ProjectReference Include="..\dFakto.Rest.Abstractions\dFakto.Rest.Abstractions.csproj" />
     </ItemGroup>
     
 </Project>

@@ -1,36 +1,62 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Net;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using dFakto.Rest.Abstractions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
+using MediaTypeHeaderValue = Microsoft.Net.Http.Headers.MediaTypeHeaderValue;
 
 namespace dFakto.Rest.AspNetCore.Mvc
 {
-    public class ExpandMiddleware
+    public class ExpandMiddlewareOptions
     {
-        //Take up to three level of expands. Next levels will be ignored
-        private readonly Regex _expandParts = new Regex(@"^(?<name>[^\.]+)\.?(?<subname>[^\.]+\.?[^\.]+\.?[^\.]+)?.*",RegexOptions.Compiled);
+        public ExpandMiddlewareOptions()
+        {
+            SupportedMediaTypes = new List<string>();
+            SupportedMediaTypes.Add(Constants.HypertextApplicationLanguageMediaType);
+
+            RequestTimeout = 5;
+        }
+        
+        /// <summary>
+        /// The MediaType of the body that will be taken in to
+        /// </summary>
+        public List<string> SupportedMediaTypes { get; set; }
+        public int RequestTimeout { get; set; }
+    }
+    
+    internal class ExpandMiddleware
+    {
+        private const string AnyMediaType = "*/*";
         
         private readonly RequestDelegate _next;
-        private readonly ResourceBuilder _builder;
+        private readonly ExpandMiddlewareOptions _middlewareOptions;
+        private readonly IResourceSerializer _resourceSerializer;
         private readonly ILogger<ExpandMiddleware> _logger;
 
-        public ExpandMiddleware(RequestDelegate next, ResourceBuilder builder, ILogger<ExpandMiddleware> logger)
+        public ExpandMiddleware(RequestDelegate next, ExpandMiddlewareOptions middlewareOptions, IResourceSerializer resourceSerializer, ILogger<ExpandMiddleware> logger)
         {
             _next = next;
+            _middlewareOptions = middlewareOptions;
             _logger = logger;
-            _builder = builder;
+            _resourceSerializer = resourceSerializer;
         }
 
-        // IMyScopedService is injected into Invoke
         public async Task Invoke(HttpContext context)
         {
-            if (!context.Request.Query.TryGetValue("expand",out var expands) || !(context.Request.ContentType?.Contains("json") ?? true))
+            var requestAccept = context.Request.Headers[HeaderNames.Accept];
+            var mediaTypes = GetMediaTypes(requestAccept.ToString());
+
+            bool mustProcess = context.Request.Query.TryGetValue("expand", out var expands) && (
+                mediaTypes.Any(x => _middlewareOptions.SupportedMediaTypes.Contains(x)) ||
+                mediaTypes.Contains(AnyMediaType));
+            
+            if (!mustProcess)
             {
                 await _next(context);
             }
@@ -39,133 +65,98 @@ namespace dFakto.Rest.AspNetCore.Mvc
                 _logger.LogDebug("Expand parameter detected");
                 var origin = context.Response.Body;
 
-                using (var tmpBody = new MemoryStream())
+                await using (var tmpBody = new MemoryStream())
                 {
+                    //Replace Body and call next middleware
                     context.Response.Body = tmpBody;
-
-                    //Call next middleware and reset stream
                     await _next(context);
-                    tmpBody.Seek(0, SeekOrigin.Begin);
-
-                    _logger.LogDebug("Loading Resource Response");
-                    //Parse Json
-                    var resource = await _builder.LoadAsync(tmpBody);
-
-                    bool changed = false;
-                    //Ensure it's a resource
-                    if (resource.GetSelf() != null)
-                    {
-                        foreach (var names in expands)
-                        {
-                            foreach (var n in names.Split(','))
-                            {
-                                var reg = _expandParts.Match(n);
-                                var name = reg.Groups["name"].Value;
-                                var subName = reg.Groups["subname"].Value;
-                                
-                                if (string.IsNullOrWhiteSpace(name) || 
-                                    name == Properties.Self || 
-                                    !resource.ContainsLink(name) || 
-                                    resource.ContainsEmbeddedResource(name))
-                                {
-                                    continue;
-                                }
-                                
-                                //Load Resource
-
-                                var url = new UriBuilder(resource.GetLink(name).Href);
-
-
-                                if (string.IsNullOrWhiteSpace(url.Query))
-                                {
-                                    url.Query = "?Embedding=true";
-                                }
-                                else
-                                {
-                                    url.Query += "&Embedding=true";
-                                }
-                                
-                                if (!string.IsNullOrWhiteSpace(subName))
-                                {
-                                    url.Query += "&expand=" + subName;
-                                }
-
-                                _logger.LogInformation($"Loading Resource at {url}");
-                                
-                                context.Request.Headers.TryGetValue("Authorization", out var auth);
-                                var embeddedResource = await GetResourceAsync(url.Uri, context.Request.Cookies, auth);
-                                if (embeddedResource != null)
-                                {
-                                    _logger.LogDebug("Resource retrieved, adding to response");
-                                    resource.AddEmbeddedResource(name, embeddedResource);
-                                    changed = true;
-                                }
-                            }
-                        }
-                    }
-
                     context.Response.Body = origin;
                     
-                    if (changed)
+                    //Reset Temp Stream
+                    tmpBody.Seek(0, SeekOrigin.Begin);
+                    
+                    if (_middlewareOptions.SupportedMediaTypes.Contains(MediaTypeHeaderValue.Parse(context.Response.ContentType).MediaType.Value))
                     {
-                        using (var ms = new MemoryStream())
-                        {
-                            await resource.WriteToAsync(ms);
-                            ms.Seek(0, SeekOrigin.Begin);
-                            context.Response.ContentLength = ms.Length;
-                            await ms.CopyToAsync(context.Response.Body);
-                        }
+                        await AutoExpandResource(tmpBody, context, expands);
                     }
                     else
                     {
-                        tmpBody.Seek(0, SeekOrigin.Begin);
                         await tmpBody.CopyToAsync(context.Response.Body);
                     }
                 }
             }
         }
 
-        private async Task<Resource> GetResourceAsync(
-            Uri uri, 
-            IRequestCookieCollection requestCookies,
-            string authorization = null)
+        public static string[] GetMediaTypes(string headerValue) =>
+            headerValue?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => MediaTypeWithQualityHeaderValue.Parse(x).MediaType).ToArray();
+
+        private async Task AutoExpandResource(Stream inputStream, HttpContext context, string[] expands)
         {
-            try
+            _logger.LogDebug("Loading Resource Response");
+            var resource = await _resourceSerializer.Deserialize(inputStream);
+
+            bool changed = false;
+
+            foreach (var names in expands)
             {
-                HttpClientHandler handler = new HttpClientHandler();
-                handler.CookieContainer = new CookieContainer();
-                foreach (var cookie in requestCookies)
+                foreach (var n in names.Split(','))
                 {
-                    _logger.LogDebug("Adding cookie " + cookie.Key + " and domain " + uri.Host);
-                    handler.CookieContainer.Add(new Cookie(cookie.Key,cookie.Value){Domain = uri.Host});
-                }
-                
-                using (HttpClient client = new HttpClient(handler))
-                {
-                    HttpRequestMessage request = new HttpRequestMessage();
-                    request.Method = HttpMethod.Get;
-                    request.RequestUri = uri;
-                    request.Headers.Accept.Clear();
-                    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    if (!string.IsNullOrEmpty(authorization))
+                    var tokens = names.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                    var linkName = tokens.Length > 1 ? tokens[1] : tokens[0];
+                    var embeddedName = tokens.Length > 1 ? tokens[0] : null;
+
+                    if (linkName == Constants.Self)
+                        continue;
+
+                    if (!string.IsNullOrEmpty(embeddedName) && resource.Embedded.ContainsKey(embeddedName))
                     {
-                        _logger.LogDebug("Adding Authorization header");
-                        request.Headers.TryAddWithoutValidation("Authorization", authorization);
+                        foreach (var r in resource.Embedded[embeddedName])
+                        {
+                            if (r.Links.ContainsKey(linkName))
+                            {
+                                r.AddEmbedded(linkName, await GetResourceAsync(r.Links[linkName].First(), context));
+                                changed = true;
+                            }
+                        }
                     }
-                    
-                    HttpResponseMessage response = await client.SendAsync(request);
-                    if (response.IsSuccessStatusCode)
+                    else if (resource.Links.Keys.Contains(linkName) && !resource.Embedded.Keys.Contains(linkName))
                     {
-                        return await _builder.LoadAsync(await response.Content.ReadAsStreamAsync());
+                        resource.AddEmbedded(linkName, await GetResourceAsync(resource.Links[linkName].First(), context));
+                        changed = true;
                     }
                 }
             }
-            catch (Exception e)
+            
+            if (changed)
             {
-                _logger.LogError(new EventId(), e, "Error while loading resource");
+                await _resourceSerializer.Serialize(context.Response.Body, resource);
+            }
+            else
+            {
+                inputStream.Seek(0, SeekOrigin.Begin);
+                await inputStream.CopyToAsync(context.Response.Body);
+            }
+        }
+
+        private async Task<IResource> GetResourceAsync(
+            Link link,
+            HttpContext context)
+        {
+            if (!string.IsNullOrEmpty(link.Type) && !_middlewareOptions.SupportedMediaTypes.Contains(link.Type))
+            {
+                return null;
             }
 
-            return null;
+            if (link.Methods.Count > 0 && !link.Methods.Contains(HttpMethod.Get))
+            {
+                return null;
+            }
+
+            return await _resourceSerializer.Deserialize(
+                await context.GetResourceStream(
+                    link.Href,
+                TimeSpan.FromSeconds(_middlewareOptions.RequestTimeout)));
         }
     }
 }

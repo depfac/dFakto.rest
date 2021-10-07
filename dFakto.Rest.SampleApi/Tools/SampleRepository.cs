@@ -1,12 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Ardalis.Specification;
-using dFakto.Rest.AspNetCore.Mvc;
-using dFakto.Rest.SampleApi.Controllers;
-using Microsoft.AspNetCore.Server.Kestrel.Core.Internal;
 
 namespace dFakto.Rest.SampleApi.Tools
 {

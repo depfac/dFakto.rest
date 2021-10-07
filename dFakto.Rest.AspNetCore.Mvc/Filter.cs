@@ -1,4 +1,4 @@
-using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace dFakto.Rest.AspNetCore.Mvc
 {
@@ -18,49 +18,68 @@ namespace dFakto.Rest.AspNetCore.Mvc
         public FilterOperator Operator { get; private set; }
         public string Value { get; private set;}
 
-        internal static Filter Parse(string filter)
+        internal static bool TryParse(string filterString, out Filter filter)
         {
-            var tokens = filter.Split(' ',3);
-            return new Filter
+            filter = null;
+            
+            if (string.IsNullOrEmpty(filterString))
             {
-                Field = tokens[0],
-                Operator = ParseOperator(tokens[1]),
-                Value = tokens[2]
-            };
+                return false;
+            }
+            
+            var tokens = filterString.Split(' ',3);
+            if (tokens.Length == 3 && TryParseOperator(tokens[1], out var filterOperator))
+            {
+                filter = new Filter
+                {
+                    Field = tokens[0],
+                    Operator = filterOperator.Value,
+                    Value = tokens[2]
+                };
+            }
+
+            return filter != null;
         }
 
-        private static FilterOperator ParseOperator(string op)
+        private static bool TryParseOperator(string op,[NotNullWhen(true)] out FilterOperator? filterOperator)
         {
+            filterOperator = null;
+            
             switch (op.ToLower())
             {
                 case "eq":
                 case "equal":
                 case "=":
-                    return FilterOperator.Equal;
+                    filterOperator = FilterOperator.Equal;
+                    break;
                 case "neq":
                 case "notequal":
                 case "!=":
                 case "<>":
-                    return FilterOperator.NotEqual;
+                    filterOperator = FilterOperator.NotEqual;
+                    break;
                 case "gt":
                 case "greatherthan":
-                case ">":
-                    return FilterOperator.GreaterThan;
+                case ">":                    
+                    filterOperator = FilterOperator.GreaterThan;
+                    break;
                 case "gte":
                 case "greatherthanorequal":
                 case ">=":
-                    return FilterOperator.GreaterThanOrEqual;
+                    filterOperator = FilterOperator.GreaterThanOrEqual;
+                    break;
                 case "lt":
                 case "lessthan":
                 case "<":
-                    return FilterOperator.LessThan;
+                    filterOperator = FilterOperator.LessThan;
+                    break;
                 case "lte":
                 case "lessthanorequal":
                 case "<=":
-                    return FilterOperator.LessThanOrEqual;
+                    filterOperator = FilterOperator.LessThanOrEqual;
+                    break;
             }
-
-            throw new NotImplementedException($"Operator '{op}' is not supported");
+            return filterOperator != null;
         }
     }
 }

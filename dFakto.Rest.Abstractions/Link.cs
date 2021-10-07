@@ -1,22 +1,29 @@
-using System.ComponentModel;
-using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
 
-namespace dFakto.Rest
+namespace dFakto.Rest.Abstractions
 {
-    [JsonConverter(typeof(LinksConverter))]
-    public class Link
+    public class Link 
     {
-        public Link(string href)
+        public Link()
+        {
+        }
+
+        public Link(string href) : this(new Uri(href))
+        {
+            
+        }
+        public Link(Uri href)
         {
             Href = href;
-            AllowedVerbs = Rest.AllowedVerbs.All;
         }
 
         /// <summary>
         ///     Its value is either a URI [RFC3986] or a URI Template [RFC6570].
         ///     If the value is a URI Template then the Link Object SHOULD have a "templated" attribute whose value is true.
         /// </summary>
-        public string Href { get; set; }
+        public Uri Href { get; set; }
 
         /// <summary>
         ///     Its value is a string and is intended for labelling the link with a human-readable identifier (as defined by
@@ -61,7 +68,7 @@ namespace dFakto.Rest
         /// </summary>
         public string Hreflang { get; set; }
         
-        public AllowedVerbs AllowedVerbs { get; set; }
+        public IList<HttpMethod> Methods { get; set; } = new List<HttpMethod>();
         
     }
 }

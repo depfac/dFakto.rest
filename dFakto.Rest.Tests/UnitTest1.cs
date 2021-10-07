@@ -1,411 +1,356 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
+using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using dFakto.Rest.Abstractions;
+using dFakto.Rest.System.Text.Json;
 using Xunit;
-using Xunit.Sdk;
 
 namespace dFakto.Rest.Tests
 {
-    public interface IMyModel
-    {
-        string Test { get; set; }
-        int Integer { get; set; }
-    }
-    public class MyModel : IMyModel
-    {
-        public string Test { get; set; }
-        public DateTime Date { get; set; }
-        public decimal Decimal { get; set; }
-        public int Integer { get; set; }
-        public double Double { get; set; }
-        public float Float { get; set; }
-        public Uri Uri { get; set; }
-        
-        public Uri Null { get; set; }
-    }
+     public interface IMyModel
+     {
+         string Test { get; set; }
+         int Integer { get; set; }
+     }
+     public class MyModel : IMyModel
+     {
+         public string Test { get; set; }
+         public DateTime Date { get; set; }
+         public decimal Decimal { get; set; }
+         public int Integer { get; set; }
+         public double Double { get; set; }
+         public float Float { get; set; }
+         public Uri Uri { get; set; }
+         
+         public Uri Null { get; set; }
+     }
 
-    public class UnitTest1
-    {
-        private MyModel GetModel()
-        {
-            return new MyModel
-            {
-                Test = "coucou", Date = DateTime.Now, Decimal = 22.33m, Uri = new Uri("http://someuri"),
-                Double = 123.232, Float = 12323334.34343f, Integer = 100, Null = null
-            };
-        }
+     public class UnitTest1
+     {
+         private readonly IResourceFactory _factory;
+         private readonly IResourceSerializer _serializer;
+         public UnitTest1()
+         {
+             var options = new JsonSerializerOptions();
+             options.WriteIndented = true;
+             options.Converters.Add(new JsonStringEnumConverter());
+             _factory = new ResourceFactory(options);
+             _serializer = _factory.CreateSerializer();
+         }
+         
+         private MyModel GetModel()
+         {
+             return new MyModel
+             {
+                 Test = "coucou", Date = DateTime.Now, Decimal = 22.33m, Uri = new Uri("http://someuri"),
+                 Double = 123.232, Float = 12323334.34343f, Integer = 100, Null = null
+             };
+         }
 
-        [Fact]
-        public void Test_Self_Exists()
-        {
-            var r = CreateResource().Self("http://someuri");
-            
-            Assert.Equal("http://someuri", r.GetSelf().Href);
+         [Fact]
+         public void Test_Self_Exists()
+         {
+             var selfUri = new Uri("http://someuri");
+             
+             var r = _factory.Create(selfUri);
 
-            var l = r.GetLinks("self");
-            Assert.NotEmpty(l);
-            Assert.Equal("http://someuri",l.First().Href);
+             var l = r.Links["self"];
+             Assert.NotEmpty(l);
+             Assert.Equal(selfUri,l.First().Href);
+             Assert.Equal(selfUri, r.Self);
+         }
+         
+         [Fact]
+         public void Test_Add_Fields()
+         { 
+             var selfUri = new Uri("http://someuri");
 
-            var ul = r.GetLink("self");
-            Assert.Equal("http://someuri",ul.Href);
-        }
-        [Fact]
-        public void Test_Add_Fields()
-        {
-            var r = CreateResource().Self("http://someuri").Add("test", 33).Add("test2", "hello");
-            
-            Assert.Equal(33,r.GetField<int>("test"));
-            Assert.Equal("hello",r.GetField<string>("test2"));
-        }
-        
-        [Fact]
-        public void Test_Add_Null()
-        {
-            var r = CreateResource().Self("http://someuri").Add("test", null,null);
-            
-            Assert.Null(r.GetField<string>("test"));
-            Assert.False(r.ContainsField("test2"));
-            Assert.Null(r.GetField<string>("test2"));
-        }
+             var r = _factory.Create(selfUri).Add(new {Test= 33}).Add(new {test2= "hello"});
 
-        [Fact]
-        public void Test_Merge_Only()
-        {
-            var r = CreateResource().Self("http://someuri").Merge(new {Field1 = "dfdf", Field2 = "test"}, new []{"Field2"});
-            
-            Assert.Null(r.GetField<string>("field1"));
-            Assert.False(r.ContainsField("field2"));
-            Assert.Null(r.GetField<string>("field2"));
-        }
-        
-        [Fact]
-        public void Test_Override_Field()
-        {
-            var r = CreateResource().Self("http://someuri")
-                .Add("test", "value")
-                .Add("test", 10);
-            
-            Assert.Equal(10,r.GetField<int>("test"));
-        }
+             var d = r.Bind(new {test2 = "",Test= 0});
 
-        [Fact]
-        public void Test_Add_Dictionary_As_Property()
-        {
-            var r = CreateResource().Self("http://someuri").Add("testdic",
-                new Dictionary<string, string>() {{"1", "A"}, {"2", "B"}});
+             Assert.Equal(33, d.Test);
+             Assert.Equal("hello", d.test2);
+         }
+         
+         [Fact]
+         public void Test_Add_Null()
+         {
+             var selfUri = new Uri("http://someuri");
 
+             var r = _factory.Create(selfUri).Add<object>(null);
 
-            var f = r.GetField<Dictionary<string, string>>("testdic");
-            
-            Assert.Equal("A", f["1"]);
-            Assert.Equal("B", f["2"]);
-        }
-        
-        
-        [Fact]
-        public void Test_Add_List_As_Property()
-        {
-            var r = CreateResource().Self("http://someuri").Add("testdic",new List<string>(){"A", "B","C"});
+             var m = r.As<MyModel>();
+             
+             Assert.Null(m.Test);         
+         }
 
+         [Fact]
+         public void Test_Merge_Only()
+         {
+             var selfUri = new Uri("http://someuri");
 
-            var f = r.GetField<string[]>("testdic");
-            
-            Assert.Equal("A", f[0]);
-            Assert.Equal("B", f[1]);
-            Assert.Equal("C", f[2]);
-            
-            
-            var f2 = r.GetField<List<string>>("testdic");
-            
-            Assert.Equal("A", f2[0]);
-            Assert.Equal("B", f2[1]);
-            Assert.Equal("C", f2[2]);
-        }
+             var r = _factory.Create(selfUri).Add(new MyModel
+             {
+                 Integer = 123456789,
+                 Test = "Some Text"
+             }, x => new {x.Integer});
 
-        [Fact]
-        public void Test_Add_Link()
-        {
-            var l = new Link("http://mylinkuri")
-            {
-                Deprecation = "http://seedeprecationhowto",
-                Href = "http://myhref",
-                Hreflang = "fr_FR",
-                Name = "other_name",
-                Profile = "http://myprofile",
-                Templated = true,
-                Title = "Sample link",
-                Type = "application/pdf",
-                AllowedVerbs = AllowedVerbs.Delete|AllowedVerbs.Put
-            };
+             var m = r.As<MyModel>();
+             
+             Assert.Null(m.Test);
+             Assert.Equal(123456789, m.Integer);
+         }
+         
+         [Fact]
+         public void Test_Override_Field()
+         {
+             var selfUri = new Uri("http://someuri");
 
-            var r = CreateResource().Self("http://dfdfdfd").AddLink("sample",l);
+             var r = _factory.Create(selfUri)
+                 .Add(new {F1 = 123})
+                 .Add(new {F1 = "hello"});
 
-            Assert.Contains("sample", r.LinkNames);
-            
-            var links = r.GetLinks("sample").ToList();
-            
-            Assert.Single(links);
-            Assert.Equal(l.Deprecation, links[0].Deprecation);
-            Assert.Equal(l.Href, links[0].Href);
-            Assert.Equal(l.Hreflang, links[0].Hreflang);
-            Assert.Equal(l.Name, links[0].Name);
-            Assert.Equal(l.Profile, links[0].Profile);
-            Assert.Equal(l.Templated, links[0].Templated);
-            Assert.Equal(l.Title, links[0].Title);
-            Assert.Equal(l.Type, links[0].Type);
-            Assert.Equal(l.AllowedVerbs, links[0].AllowedVerbs);
-        }
+             var m = r.Bind(new {F1 = ""});
+             
+             Assert.Equal("hello",m.F1);
+         }
 
-        [Fact]
-        public void Test_Get_Link_Return_Empty_if_no_link()
-        {
-            var r = CreateResource();
-            
-            Assert.Empty(r.GetLinks("test"));
-        }
-        
-        [Fact]
-        public void Fields_cannot_be_named_links_or_embedded()
-        {
-            var r = CreateResource().Self("hello").AddEmbeddedResource("test", CreateResource());
+         [Fact]
+         public void Test_Add_Dictionary_As_Property()
+         {
+             var selfUri = new Uri("http://someuri");
 
-            Assert.False(r.ContainsField("_links"));
-            Assert.False(r.ContainsField("_embedded"));
-            Assert.DoesNotContain("_links",r.FieldsNames);
-            Assert.DoesNotContain("_embedded",r.FieldsNames);
+             var r = _factory.Create(selfUri).Add(new Dictionary<string, string>() {{"1", "A"}, {"2", "B"}});
+             
+             var f = r.As<Dictionary<string, string>>();
+             
+             Assert.Equal("A", f["1"]);
+             Assert.Equal("B", f["2"]);
+         }
+         
+         
+         [Fact]
+         public void Test_Add_List_As_Property()
+         {
+             var selfUri = new Uri("http://someuri");
 
-            Assert.Throws<ArgumentException>(() => r.Add("_links", "test"));
-            Assert.Throws<ArgumentException>(() => r.Add("_embedded", "test"));
-        }
+             Assert.Throws<ArgumentException>(() => _factory.Create(selfUri).Add(new List<string>() {"A", "B", "C"}));
+         }
 
-        [Fact]
-        public void Test_null_arguments()
-        {
-            var r = CreateResource();
-            
-            Assert.Throws<ArgumentNullException>(() => r.Add(null, "test"));
-            Assert.Throws<ArgumentNullException>(() => r.Add(string.Empty, "test"));
-            Assert.Throws<ArgumentNullException>(() => r.AddLink(null,"href"));
-            Assert.Throws<ArgumentNullException>(() => r.AddLink("testnull",(Link)null));
-            Assert.Throws<ArgumentNullException>(() => r.AddLink("testnull",(string)null));
-            Assert.Throws<ArgumentNullException>(() => r.AddLink(null,(Link)null));
-            Assert.Throws<ArgumentNullException>(() => r.AddLink(null,(string)null));
-            Assert.Throws<ArgumentNullException>(() => r.AddLinks(null,null));
+         [Fact]
+         public void Test_Add_Link()
+         {
+             var l = new Link(new Uri("http://mylinkuri"))
+             {
+                 Deprecation = "http://seedeprecationhowto",
+                 Hreflang = "fr_FR",
+                 Name = "other_name",
+                 Profile = "http://myprofile",
+                 Templated = true,
+                 Title = "Sample link",
+                 Type = "application/pdf",
+                 Methods = new []{HttpMethod.Delete, HttpMethod.Put, }
+             };
 
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResource(null,CreateResource()));
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResources(null,(IEnumerable<Resource>) null));
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResource(string.Empty,CreateResource()));
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResources("test", (IEnumerable<Resource>) null));
-            Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResources("test", (Resource[]) null));
-            
-            Assert.Throws<ArgumentNullException>(() => r.AddLink("testnull",string.Empty));
-            Assert.Throws<ArgumentNullException>(() => r.AddLinks("testnull",null));
-            Assert.Throws<ArgumentNullException>(() => r.GetEmbeddedResources(null).ToArray());
-            Assert.Throws<ArgumentNullException>(() => r.GetEmbeddedResources(string.Empty).ToArray());
-            Assert.Throws<ArgumentNullException>(() => r.GetLinks(null).ToArray());
-            Assert.Throws<ArgumentNullException>(() => r.GetLinks(string.Empty).ToArray());
-            Assert.Throws<ArgumentNullException>(() => r.GetField<string>(null));
-            
-            
-            Assert.Throws<ArgumentNullException>(() => r.ContainsEmbeddedResource(null));
-            Assert.Throws<ArgumentNullException>(() => r.ContainsEmbeddedResource(string.Empty));
-            Assert.Throws<ArgumentNullException>(() => r.ContainsLink(null));
-            Assert.Throws<ArgumentNullException>(() => r.ContainsLink(string.Empty));
-            Assert.Throws<ArgumentNullException>(() => r.ContainsField(null));
-            Assert.Throws<ArgumentNullException>(() => r.ContainsField(string.Empty));
-            Assert.Throws<ArgumentNullException>(() => r.Self(string.Empty));
-            Assert.Throws<ArgumentNullException>(() => r.Self(string.Empty));
-            Assert.Throws<ArgumentNullException>(() => r.Merge<object>(null));
-            Assert.Throws<ArgumentNullException>(() => r.Merge<object>(null,new string[]{"test"}));
-        }
+             var selfUri = new Uri("http://someuri");
 
-        [Fact]
-        public void Test_Add_Multiple_Links()
-        {
-            var l = new Link("http://mylinkuri1");
-            var l2 = new Link("http://mylinkuri2");
-            var l3 = new Link("http://mylinkuri3");
+             var r = _factory.Create(selfUri).AddLink("sample",l);
 
-            var r = CreateResource().Self("http://testcom");
+             Assert.Contains("sample", r.Links.Keys);
+             
+             var links = r.Links["sample"];
+             
+             Assert.Single(links);
+             Assert.Equal(l.Deprecation, links[0].Deprecation);
+             Assert.Equal(l.Href, links[0].Href);
+             Assert.Equal(l.Hreflang, links[0].Hreflang);
+             Assert.Equal(l.Name, links[0].Name);
+             Assert.Equal(l.Profile, links[0].Profile);
+             Assert.Equal(l.Templated, links[0].Templated);
+             Assert.Equal(l.Title, links[0].Title);
+             Assert.Equal(l.Type, links[0].Type);
+             Assert.Equal(l.Methods, links[0].Methods);
+         }
 
-            r.AddLinks("sample", l, l2);
-            
-            var links = r.GetLinks("sample").ToArray();
-            
-            Assert.Equal(2, links.Length);
-            Assert.Equal("http://mylinkuri1",links[0].Href);
-            Assert.Equal("http://mylinkuri2",links[1].Href);
-            
-            //Override previous links
-            r.AddLink("sample", l3);
-            
-            links = r.GetLinks("sample").ToArray();
-            
-            Assert.Single(links);
-            Assert.Equal("http://mylinkuri3",links[0].Href);
+         
+         [Fact]
+         public void Fields_cannot_be_named_links_or_embedded()
+         {
+             var selfUri = new Uri("http://someuri");
 
-            r.AddLinks("sample", l, l2);
-            links = r.GetLinks("sample").ToArray();
-            
-            Assert.Equal(2, links.Length);
-            Assert.Equal("http://mylinkuri1",links[0].Href);
-            Assert.Equal("http://mylinkuri2",links[1].Href);
-            
-            r.AddLinks("sample", l, null, l2);
-            links = r.GetLinks("sample").ToArray();
-            
-            Assert.Equal(2, links.Length);
-            Assert.Equal("http://mylinkuri1",links[0].Href);
-            Assert.Equal("http://mylinkuri2",links[1].Href);
-        }
-        
-        [Fact]
-        public void Test_Add_Embedded()
-        {
-            var e = CreateResource().Self("embedded");
-            Assert.Empty(e.EmbeddedResourceNames);
-            Assert.Empty(e.GetEmbeddedResources("not_exists"));
-            
-            var r = CreateResource().Self("root")
-                .AddEmbeddedResource("test", e);
-            
-            Assert.Contains("test",r.EmbeddedResourceNames);
-            Assert.DoesNotContain("test_not_exists",r.EmbeddedResourceNames);
-            Assert.Single(r.EmbeddedResourceNames);
-            Assert.True(r.ContainsEmbeddedResource("test"));
-            Assert.False(r.ContainsEmbeddedResource("test_not_exists"));
-            Assert.Equal("embedded",r.GetEmbeddedResources("test").First().GetSelf().Href);
-            Assert.Empty(r.GetEmbeddedResources("test_dot_not_exists"));
+             var r = _factory.Create(selfUri);
 
-            r.AddEmbeddedResources("test", e, e);
-            
-            Assert.Contains("test",r.EmbeddedResourceNames);
-            Assert.DoesNotContain("test_not_exists",r.EmbeddedResourceNames);
-            Assert.Single(r.EmbeddedResourceNames);
-            Assert.True(r.ContainsEmbeddedResource("test"));
-            Assert.False(r.ContainsEmbeddedResource("test_not_exists"));
+             Assert.Throws<ArgumentException>(() => r.Add(new {_links = "teet"}));
+             Assert.Throws<ArgumentException>(() => r.Add(new {_embedded = "teet"}));
+         }
 
-            var emm = r.GetEmbeddedResources("test").ToArray();
-            
-            Assert.Equal(2,emm.Length);
-            Assert.Equal("embedded", emm[0].GetSelf().Href);
-            Assert.Equal("embedded", emm[1].GetSelf().Href);
-            
-            Assert.Empty(r.GetEmbeddedResources("test_dot_not_exists"));
-            
-            r.AddEmbeddedResources("test", e,e,e);
-            
-            emm = r.GetEmbeddedResources("test").ToArray();
+         [Fact]
+         public void Test_null_arguments()
+         {
+             var selfUri = new Uri("http://someuri");
 
-            Assert.Equal(3, emm.Length);
-            
-            r.AddEmbeddedResources("test", e,null,e);
-            
-            emm = r.GetEmbeddedResources("test").ToArray();
+             var r = _factory.Create(selfUri);
 
-            Assert.Equal(2, emm.Length);
+             Assert.Throws<ArgumentException>(() => r.AddLink(null, (Link) null));
+             Assert.Throws<ArgumentException>(() => r.AddLink(null, null));
+             Assert.Throws<ArgumentException>(() => r.AddEmbedded(null, _factory.Create(selfUri)));
+             Assert.Throws<ArgumentException>(() => r.AddEmbedded(null, (IEnumerable<IResource>) null));
+             Assert.Throws<ArgumentException>(() => r.AddEmbedded(string.Empty, _factory.Create(selfUri)));
+             
+             Assert.Throws<ArgumentNullException>(() => r.AddLink("test", (IEnumerable<Link>) null));
+             Assert.Throws<ArgumentNullException>(() => r.AddLink("test", (Link[]) null));
+             
+             Assert.Throws<ArgumentNullException>(() => r.AddEmbedded("test", (IEnumerable<IResource>) null));
+             Assert.Throws<ArgumentNullException>(() => r.AddEmbedded("test", (IResource[]) null));
+         }
 
-            var rr = CreateResource();
-            rr.AddEmbeddedResources("test", emm);
+         [Fact]
+         public void Test_Add_Multiple_Links()
+         {
+             var l = new Link("http://mylinkuri1");
+             var l2 = new Link("http://mylinkuri2");
+             var l3 = new Link("http://mylinkuri3");
+             
+             var selfUri = new Uri("http://someuri");
 
+             var r = _factory.Create(selfUri);
 
-            e.AddEmbeddedResource("testsingle",CreateResource());
-            
-            Assert.NotNull(e.GetEmbeddedResource("testsingle")); 
-        }
+             r.AddLink("sample", l, l2);
+             
+             var links = r.Links["sample"];
+             
+             Assert.Equal(2, links.Count);
+             Assert.Equal(l.Href,links[0].Href);
+             Assert.Equal(l2.Href,links[1].Href);
+             
+             //Override previous links
+             r.AddLink("sample", l3);
+             
+             links = r.Links["sample"];
+             
+             Assert.Single(links);
+             Assert.Equal(l3.Href,links[0].Href);
+             
+             r.AddLink("sample", l, null, l2);
+             links = r.Links["sample"];
+             
+             Assert.Equal(2, links.Count);
+             Assert.Equal(l.Href,links[0].Href);
+             Assert.Equal(l2.Href,links[1].Href);
+         }
+         
+         [Fact]
+         public void Test_Add_Embedded()
+         {
+             var selfUri = new Uri("http://embedded");
+             var e = _factory.Create(selfUri);
+             Assert.Empty(e.Embedded.Keys);
+             
+             var r = _factory.Create(new Uri("http://root"))
+                 .AddEmbedded("test", e);
+             
+             Assert.Contains("test",r.Embedded.Keys);
+             Assert.Single(r.Embedded);
+             Assert.Equal(selfUri,r.Embedded["test"].First().Self);
 
-        [Fact]
-        public void Test_As_Method()
-        {
-            var m = GetModel();
-            var m2 = CreateResource().Merge(m).As<MyModel>();
-            
-            Assert.Equal(m.Date,m2.Date);
-            Assert.Equal(m.Decimal,m2.Decimal);
-            Assert.Equal(m.Double,m2.Double);
-            Assert.Equal(m.Float,m2.Float);
-            Assert.Equal(m.Integer,m2.Integer);
-            Assert.Equal(m.Null,m2.Null);
-            Assert.Equal(m.Test,m2.Test);
-            Assert.Equal(m.Uri,m2.Uri);
-        }
+             r.AddEmbedded("test", e, e);
+             
+             Assert.Contains("test",r.Embedded.Keys);
+             Assert.Single(r.Embedded);
 
-        [Fact]
-        public void TestSerializer()
-        {
-            var ser = new JsonSerializerSettings();
-            ser.ContractResolver = new CamelCasePropertyNamesContractResolver();
-            ser.NullValueHandling = NullValueHandling.Ignore;
+             var emm = r.Embedded["test"];
+             
+             Assert.Equal(2,emm.Count);
+             Assert.Equal(selfUri, emm[0].Self);
+             Assert.Equal(selfUri, emm[1].Self);
+         }
 
-            var embedde = CreateResource().Self("https://dfdfdfdfdf/self");
+         [Fact]
+         public void Test_As_Method()
+         {
+             var m = GetModel();
+             var selfUri = new Uri("http://embedded");
+             var m2 = _factory.Create(selfUri).Add(m).As<MyModel>();
+             
+             Assert.Equal(m.Date,m2.Date);
+             Assert.Equal(m.Decimal,m2.Decimal);
+             Assert.Equal(m.Double,m2.Double);
+             Assert.Equal(m.Float,m2.Float);
+             Assert.Equal(m.Integer,m2.Integer);
+             Assert.Equal(m.Null,m2.Null);
+             Assert.Equal(m.Test,m2.Test);
+             Assert.Equal(m.Uri,m2.Uri);
+         }
 
-            var r = CreateResource().Self("http://sdsdsdsd");
-            r.AddLink("prev", "http://ddfdfdfddf/prev")
-                .AddLink("next", "http://ddfdfdfddf/next")
-                .Add("testint", 33)
-                .Merge((IMyModel)GetModel(), new[] {"Double"})
-                .Merge(GetModel())
-                .Add("testurl", "http://dfdfdfdf")
-                .Merge(new MyModel {Test = "toto"}, new[] {"test"})
-                .AddEmbeddedResource("same", embedde)
-                .AddEmbeddedResource("same", embedde)
-                .AddEmbeddedResource("same", embedde)
-                .AddLink("same", new Link(embedde.GetSelf().Href) {Name = "coucou"})
-                .AddLink("same", new Link(embedde.GetSelf().Href) {Name = "toto"});
-            
-            string json = JsonConvert.SerializeObject(r,Formatting.Indented, ser);
+         [Fact]
+         public async Task TestSerializer()
+         {
+             var selfUri = new Uri("http://sdsdsdsd");
+             var m2 = _factory.Create(selfUri);
+             var embedde = _factory.Create(new Uri("https://dfdfdfdfdf/self"));
 
-            var rr = JsonConvert.DeserializeObject<Resource>(json);
-            
-            string json2 = JsonConvert.SerializeObject(rr,Formatting.Indented, ser);
-            
-            Assert.Equal(json,json2);
+             var r = _factory.Create(new Uri("http://sdsdsdsd"));
+             r.AddLink("prev", new Link("http://ddfdfdfddf/prev"))
+                 .AddLink("next", new Link("http://ddfdfdfddf/next"))
+                 .Add(new {testint=13})
+                 .Add(GetModel(), x => new {x.Double})
+                 .Add(GetModel())
+                 .Add(new {testurl="http://dfdfdfdf"} )
+                 .AddEmbedded("same", embedde)
+                 .AddEmbedded("same", embedde)
+                 .AddEmbedded("same", embedde)
+                 .AddLink("same", new Link(embedde.Self) {Name = "coucou"})
+                 .AddLink("same", new Link(embedde.Self) {Name = "toto", Methods = new []{HttpMethod.Get, HttpMethod.Patch}});
 
-        }
+             var json = await _serializer.Serialize(r);
+             var r2 = await _serializer.Deserialize(json);
+             Assert.Equal(json,await _serializer.Serialize(r2));
 
-        [Fact]
-        public void Test_NamingConvention()
-        {
-            var r = CreateResource().Add("NAME", "hello");
-            
-            Assert.Equal("hello",r.GetField<string>("NAME"));
-            Assert.True(r.ContainsField("NAME"));
-            Assert.True(r.ContainsField("name"));
-            Assert.False(r.ContainsField("nAME"));
-
-            r.AddLink("LINK", "http://sss");
-            Assert.True(r.ContainsLink("link"));
-            Assert.True(r.ContainsLink("Link"));
-            Assert.False(r.ContainsLink("lINk"));
-
-            r.AddEmbeddedResource("MyResource", CreateResource());
-            Assert.True(r.ContainsEmbeddedResource("MyResource"));
-            Assert.True(r.ContainsEmbeddedResource("myResource"));
-
-            r = CreateResource(false).Add("NAME", "hello");
-            Assert.Equal("hello",r.GetField<string>("NAME"));
-            Assert.True(r.ContainsField("NAME"));
-            Assert.False(r.ContainsField("name"));
-            Assert.False(r.ContainsField("nAME"));
-        }
-
-        public Resource CreateResource(bool overrideSpecificName = true)
-        {   
-            var ccpncr = new CamelCasePropertyNamesContractResolver();
-            ccpncr.NamingStrategy.OverrideSpecifiedNames = overrideSpecificName;
-            
-            var ser = new JsonSerializerSettings();
-            ser.ContractResolver = ccpncr;
-            ser.NullValueHandling = NullValueHandling.Ignore;
-            
-
-            ResourceBuilder builder = new ResourceBuilder(ser);
-            return builder.Create();
-        }
-    }
-}
+         }
+//
+//         [Fact]
+//         public void Test_NamingConvention()
+//         {
+//             var r = CreateResource().Add("NAME", "hello");
+//             
+//             Assert.Equal("hello",r.GetField<string>("NAME"));
+//             Assert.True(r.ContainsField("NAME"));
+//             Assert.True(r.ContainsField("name"));
+//             Assert.False(r.ContainsField("nAME"));
+//
+//             r.AddLink("LINK", "http://sss");
+//             Assert.True(r.ContainsLink("link"));
+//             Assert.True(r.ContainsLink("Link"));
+//             Assert.False(r.ContainsLink("lINk"));
+//
+//             r.AddEmbeddedResource("MyResource", CreateResource());
+//             Assert.True(r.ContainsEmbeddedResource("MyResource"));
+//             Assert.True(r.ContainsEmbeddedResource("myResource"));
+//
+//             r = CreateResource(false).Add("NAME", "hello");
+//             Assert.Equal("hello",r.GetField<string>("NAME"));
+//             Assert.True(r.ContainsField("NAME"));
+//             Assert.False(r.ContainsField("name"));
+//             Assert.False(r.ContainsField("nAME"));
+//         }
+//
+//         public Resource CreateResource(bool overrideSpecificName = true)
+//         {   
+//             var ccpncr = new CamelCasePropertyNamesContractResolver();
+//             ccpncr.NamingStrategy.OverrideSpecifiedNames = overrideSpecificName;
+//             
+//             var ser = new JsonSerializerSettings();
+//             ser.ContractResolver = ccpncr;
+//             ser.NullValueHandling = NullValueHandling.Ignore;
+//             
+//
+//             ResourceBuilder builder = new ResourceBuilder(ser);
+//             return builder.Create();
+//         }
+     }
+ }

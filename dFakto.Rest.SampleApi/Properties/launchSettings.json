@@ -3,7 +3,7 @@
   "profiles": {
     "dFakto.Rest.SampleApi": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "launchUrl": "api/values",
       "applicationUrl": "http://localhost:1234",
       "environmentVariables": {

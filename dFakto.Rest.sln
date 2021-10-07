@@ -1,12 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dFakto.Rest", "dFakto.Rest\dFakto.Rest.csproj", "{9EE2C01D-B84E-40B3-8312-A228EC7C4CF3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dFakto.Rest.Abstractions", "dFakto.Rest.Abstractions\dFakto.Rest.Abstractions.csproj", "{9EE2C01D-B84E-40B3-8312-A228EC7C4CF3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dFakto.Rest.Tests", "dFakto.Rest.Tests\dFakto.Rest.Tests.csproj", "{4CFDA60B-89E3-4DCD-9342-75557691F3D9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dFakto.Rest.SampleApi", "dFakto.Rest.SampleApi\dFakto.Rest.SampleApi.csproj", "{652CD667-D0ED-466E-BF3D-027747056EDA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dFakto.Rest.AspNetCore.Mvc", "dFakto.Rest.AspNetCore.Mvc\dFakto.Rest.AspNetCore.Mvc.csproj", "{5003CC42-7B50-4602-97E7-95F5E8F2D70E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dFakto.Rest.System.Text.Json", "dFakto.Rest.System.Text.Json\dFakto.Rest.System.Text.Json.csproj", "{53A3C432-3583-4523-86B7-2A98BFF366D7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SampleApp", "SampleApp", "{F6B8F3EB-395C-417C-BB3A-D646274E8516}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,5 +34,12 @@ Global
 		{5003CC42-7B50-4602-97E7-95F5E8F2D70E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5003CC42-7B50-4602-97E7-95F5E8F2D70E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5003CC42-7B50-4602-97E7-95F5E8F2D70E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53A3C432-3583-4523-86B7-2A98BFF366D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53A3C432-3583-4523-86B7-2A98BFF366D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53A3C432-3583-4523-86B7-2A98BFF366D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53A3C432-3583-4523-86B7-2A98BFF366D7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{652CD667-D0ED-466E-BF3D-027747056EDA} = {F6B8F3EB-395C-417C-BB3A-D646274E8516}
 	EndGlobalSection
 EndGlobal

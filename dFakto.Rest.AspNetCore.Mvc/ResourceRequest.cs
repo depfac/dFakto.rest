@@ -1,24 +1,15 @@
 using System;
-using System.Linq;
+using Microsoft.AspNetCore.Mvc;
 
 namespace dFakto.Rest.AspNetCore.Mvc
 {
     public class ResourceRequest
     {
         /// <summary>
-        ///  When true, the requested resource will be embedded into another resource, the api can therefore decide to not return the complete list of fields
+        /// List of links that need to be expanded.
+        /// The format can be a link name or an embedded resource name followed by the link name (embedded.link)
         /// </summary>
-        public bool Embedding { get; set; } = false;
-        
-        /// <summary>
-        /// List of links that need to be expanded
-        /// </summary>
+        [FromQuery(Name = "expand")]
         public string[] Expand { get; set; } = Array.Empty<string>();
-        
-        /// <summary>
-        /// List of fields that need to be returned by api.
-        /// null value means all fields.
-        /// </summary>
-        public string[] Fields { get; set; } = null;
     }
 }

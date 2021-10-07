@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Ardalis.Specification;
@@ -19,8 +18,15 @@ namespace dFakto.Rest.SampleApi.Tools
             ApplyFilter(collectionRequest.Filter);
             ApplyOrderBy(collectionRequest.Sort);
 
-            Query.Skip(collectionRequest.Index);
-            Query.Take(collectionRequest.Limit);
+            if (collectionRequest.Index.HasValue)
+            {
+                Query.Skip(collectionRequest.Index.Value);
+            }
+
+            if (collectionRequest.Limit.HasValue)
+            {
+                Query.Take(collectionRequest.Limit.Value);
+            }
         }
 
         private void ApplyFilter(Filter? filter)
@@ -134,6 +140,5 @@ namespace dFakto.Rest.SampleApi.Tools
             
             return Expression.Lambda<Func<T, bool>>(expr, parameter);
         }
-
     }
 }
