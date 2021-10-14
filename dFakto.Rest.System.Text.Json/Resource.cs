@@ -1,9 +1,6 @@
 using System;
 using System.Buffers;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -52,7 +49,7 @@ namespace dFakto.Rest.System.Text.Json
             {
                 _links.Remove(name);
             }
-            _links.Add(name, new List<Link>(links.Where(x => x != null)));
+            _links.Add(name, new List<Link>(links));
 
             return this;
         }
@@ -82,11 +79,8 @@ namespace dFakto.Rest.System.Text.Json
             return this;
         }
 
-        public IResource Add<T>(T values, Func<T,object> onlyFields = null) where T : class
+        public IResource Add<T>(T values, Func<T,object>? onlyFields = null) where T : class
         {
-            if (values == null)
-                return this;
-
             using (var jsonDocument = JsonDocument.Parse(
                 JsonSerializer.SerializeToUtf8Bytes(onlyFields != null ? onlyFields(values) : values,
                     _serializerSettings)))
@@ -102,12 +96,12 @@ namespace dFakto.Rest.System.Text.Json
             return this;
         }
 
-        public T As<T>()
+        public T? As<T>()
         {
             return JsonSerializer.Deserialize<T>(JsonObjectValues);
         }
 
-        public T Bind<T>(T type)
+        public T? Bind<T>(T type)
         {
             return As<T>();
         }

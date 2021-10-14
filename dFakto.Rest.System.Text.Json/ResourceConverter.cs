@@ -1,9 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using dFakto.Rest.Abstractions;
@@ -27,7 +25,7 @@ namespace dFakto.Rest.System.Text.Json
 
     internal class ResourceConverter : JsonConverter<IResource>
     {
-        private delegate T DeserializeFunc<T>(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options);
+        private delegate T DeserializeFunc<out T>(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options);
         private readonly JsonConverter<Link> _linkConverter;
 
         public ResourceConverter()
@@ -35,14 +33,14 @@ namespace dFakto.Rest.System.Text.Json
             _linkConverter = new LinkConverter();
         }
         
-        public override IResource? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override IResource Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)
             {
                 throw new JsonException();
             }
 
-            var resource = new Resource(options);
+            Resource resource = new Resource(options);
             
             // Used to compute the resource properties
             var outputBuffer = new ArrayBufferWriter<byte>();
@@ -62,7 +60,7 @@ namespace dFakto.Rest.System.Text.Json
                             var links = ReadObjectorArray(ref reader, options, _linkConverter.Read);
                             foreach (var l in links)
                             {
-                                resource.AddLink(l.Key, l.Value);
+                                resource.AddLink(l.Key, l.Value.Where(x => x != null).Cast<Link>());
                             }
 
                             break;
@@ -82,7 +80,7 @@ namespace dFakto.Rest.System.Text.Json
                             }
                             else
                             {
-                                var v = (JsonElement) JsonSerializer.Deserialize<object>(ref reader, options);
+                                var v = (JsonElement) (JsonSerializer.Deserialize<object>(ref reader, options)!);
                                 v.WriteTo(writer);
                             }
 
@@ -93,7 +91,7 @@ namespace dFakto.Rest.System.Text.Json
                 writer.WriteEndObject();
             }
 
-            resource.Add(JsonSerializer.Deserialize<object>(outputBuffer.WrittenSpan, options));
+            resource.Add(JsonSerializer.Deserialize<object>(outputBuffer.WrittenSpan, options)!);
 
             return resource;
         }
@@ -170,7 +168,7 @@ namespace dFakto.Rest.System.Text.Json
                 throw new JsonException();
             }
 
-            var propertyName = reader.GetString();
+            var propertyName = reader.GetString() ?? throw new InvalidOperationException("Unable to read property Value");
             reader.Read();
             return propertyName;
         }
@@ -186,8 +184,7 @@ namespace dFakto.Rest.System.Text.Json
             }
 
             var result = new Dictionary<string, IList<T>>();
-            
-            bool isArray = false;
+
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)

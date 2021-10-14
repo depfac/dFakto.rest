@@ -7,10 +7,13 @@ namespace dFakto.Rest.Abstractions
     /// <summary>
     /// A Link Object represents a hyperlink from the containing resource to a URI.
     /// </summary>
-    public class Link 
+    public class Link
     {
+        private static readonly Uri Dummy = new Uri("http://dummy");
+        
         public Link()
         {
+            Href = Dummy;
         }
 
         public Link(string href) : this(new Uri(href))

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
@@ -19,7 +20,7 @@ namespace dFakto.Rest.System.Text.Json
         private const string TypePropertyName = "type";
         private const string MethodsPropertyName = "method";
 
-        public override Link? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override Link Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartObject)
                 throw new JsonException();
@@ -32,13 +33,16 @@ namespace dFakto.Rest.System.Text.Json
                 if (reader.TokenType != JsonTokenType.PropertyName)
                     throw new JsonException();
 
-                string property = reader.GetString();
+                string property = reader.GetString() ?? throw new InvalidOperationException("Unable to retrieve Property Name");
                 reader.Read();
                 
                 switch (property)
                 {
                     case HrefPropertyName:
-                        l.Href = new Uri(reader.GetString());
+                        if (reader.TokenType != JsonTokenType.Null)
+                        {
+                            l.Href = new Uri(reader.GetString()!);
+                        }
                         break;
                     case DeprecationPropertyName:
                         l.Deprecation = reader.GetString();

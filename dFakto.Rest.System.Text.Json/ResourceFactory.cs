@@ -9,7 +9,7 @@ namespace dFakto.Rest.System.Text.Json
     {
         private readonly JsonSerializerOptions _jsonSerializerOptions;
 
-        public ResourceFactory(JsonSerializerOptions jsonSerializerOptions = null)
+        public ResourceFactory(JsonSerializerOptions? jsonSerializerOptions = null)
         {
             _jsonSerializerOptions = jsonSerializerOptions ?? new JsonSerializerOptions(JsonSerializerDefaults.General);
             _jsonSerializerOptions.Converters.Add(new ResourceConverterFactory());

@@ -71,7 +71,7 @@ namespace dFakto.Rest.Abstractions
         /// </summary>
         /// <typeparam name="T">The Type</typeparam>
         /// <returns></returns>
-        T As<T>();
+        T? As<T>();
         
         /// <summary>
         /// Retrieve the values mappas as T. Syntax mainly used using anonymous objects
@@ -80,6 +80,6 @@ namespace dFakto.Rest.Abstractions
         /// <param name="type">Anonymous Object Type</param>
         /// <typeparam name="T">The Type</typeparam>
         /// <returns></returns>
-        T Bind<T>(T type);
+        T? Bind<T>(T type);
     }
 }

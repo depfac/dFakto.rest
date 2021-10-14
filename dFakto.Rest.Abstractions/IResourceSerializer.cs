@@ -13,14 +13,14 @@ namespace dFakto.Rest.Abstractions
         /// </summary>
         /// <param name="json">application/hal+json Json document</param>
         /// <returns></returns>
-        Task<IResource> Deserialize(string json);
+        Task<IResource?> Deserialize(string json);
         
         /// <summary>
         /// Deserialize Json Stream into a IResource
         /// </summary>
         /// <param name="stream">Stream containing application/hal+json Json document</param>
         /// <returns></returns>
-        Task<IResource> Deserialize(Stream stream);
+        Task<IResource?> Deserialize(Stream stream);
         
         /// <summary>
         /// Serialize an IResource into a application/hal+json Json document
