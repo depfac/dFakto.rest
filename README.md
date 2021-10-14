@@ -57,7 +57,7 @@ Will return the following Json
 }
 ```
 
-## How to integrate into ASP.NET Core MV project
+## How to integrate into ASP.NET Core project
 
 
 ### First add the reference to your project
