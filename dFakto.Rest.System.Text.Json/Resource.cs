@@ -109,7 +109,7 @@ namespace dFakto.Rest.System.Text.Json
 
         public T Bind<T>(T type)
         {
-            return JsonSerializer.Deserialize<T>(JsonObjectValues);
+            return As<T>();
         }
 
         internal string JsonObjectValues { get; private set; } = "{}";

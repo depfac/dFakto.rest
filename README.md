@@ -116,7 +116,7 @@ class  MyController : Controller
 ```
 For more information, look at the sample project
 
-## Expand Middleware
+## Expand Middleware (Hypertext Cache Pattern)
 A special middleware can be integrated to load linked ressource as embedded automtically based on the "expand" parameter
 
 To enable this middleware, you have to update your Startup.cs file

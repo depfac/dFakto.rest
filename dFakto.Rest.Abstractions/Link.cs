@@ -4,6 +4,9 @@ using System.Net.Http;
 
 namespace dFakto.Rest.Abstractions
 {
+    /// <summary>
+    /// A Link Object represents a hyperlink from the containing resource to a URI.
+    /// </summary>
     public class Link 
     {
         public Link()
@@ -14,6 +17,7 @@ namespace dFakto.Rest.Abstractions
         {
             
         }
+        
         public Link(Uri href)
         {
             Href = href;
@@ -29,7 +33,7 @@ namespace dFakto.Rest.Abstractions
         ///     Its value is a string and is intended for labelling the link with a human-readable identifier (as defined by
         ///     [RFC5988]).
         /// </summary>
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         /// <summary>
         ///     Its value is boolean and SHOULD be true when the Link Object's "href" property is a URI Template.
@@ -40,7 +44,7 @@ namespace dFakto.Rest.Abstractions
         /// <summary>
         ///     Its value is a string used as a hint to indicate the media type expected when dereferencing the target resource.
         /// </summary>
-        public string Type { get; set; }
+        public string? Type { get; set; }
 
         /// <summary>
         ///     Its presence indicates that the link is to be deprecated (i.e. removed) at a future date.
@@ -50,24 +54,28 @@ namespace dFakto.Rest.Abstractions
         ///     property.  The notification SHOULD include the deprecation property's
         ///     value so that a client maintainer can easily find information about the deprecation.
         /// </summary>
-        public string Deprecation { get; set; }
+        public string? Deprecation { get; set; }
 
         /// <summary>
         ///     Its value MAY be used as a secondary key for selecting Link Objects which share the same relation type.
         /// </summary>
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         ///     Its value is a string which is a URI that hints about the profile (as defined by [I-D.wilde-profile-link]) of the
         ///     target resource.
         /// </summary>
-        public string Profile { get; set; }
+        public string? Profile { get; set; }
 
         /// <summary>
         ///     Its value is a string and is intended for indicating the language of the target resource (as defined by [RFC5988]).
         /// </summary>
-        public string Hreflang { get; set; }
+        public string? Hreflang { get; set; }
         
+        /// <summary>
+        /// List available HTTP method for this Link.
+        /// <remarks>This is an extension to the standard to avoid an additional OPTIONS request to retrieve the Accept HTTP Header</remarks>
+        /// </summary>
         public IList<HttpMethod> Methods { get; set; } = new List<HttpMethod>();
         
     }

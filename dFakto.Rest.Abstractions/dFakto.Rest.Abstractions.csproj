@@ -12,6 +12,7 @@
         <PackageReleaseNotes>First draft</PackageReleaseNotes>
         <Title>dFakto.Rest</Title>
         <LangVersion>latestmajor</LangVersion>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
 </Project>
