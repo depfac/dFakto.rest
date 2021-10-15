@@ -49,7 +49,7 @@ namespace dFakto.Rest.System.Text.Json
             {
                 _links.Remove(name);
             }
-            _links.Add(name, new List<Link>(links));
+            _links.Add(name, new List<Link>(links.Where(x => x != null)));
 
             return this;
         }
@@ -81,6 +81,9 @@ namespace dFakto.Rest.System.Text.Json
 
         public IResource Add<T>(T values, Func<T,object>? onlyFields = null) where T : class
         {
+            if (values == null)
+                return this;
+            
             using (var jsonDocument = JsonDocument.Parse(
                 JsonSerializer.SerializeToUtf8Bytes(onlyFields != null ? onlyFields(values) : values,
                     _serializerSettings)))
