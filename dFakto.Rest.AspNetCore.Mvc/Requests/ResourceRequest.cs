@@ -1,7 +1,7 @@
 using System;
 using Microsoft.AspNetCore.Mvc;
 
-namespace dFakto.Rest.AspNetCore.Mvc
+namespace dFakto.Rest.AspNetCore.Mvc.Requests
 {
     public class ResourceRequest
     {

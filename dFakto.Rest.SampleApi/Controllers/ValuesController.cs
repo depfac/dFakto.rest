@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using dFakto.Rest.Abstractions;
 using dFakto.Rest.AspNetCore.Mvc;
+using dFakto.Rest.AspNetCore.Mvc.Requests;
 using dFakto.Rest.SampleApi.Tools;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
@@ -32,7 +33,7 @@ namespace dFakto.Rest.SampleApi.Controllers
         }
 
         private IResource GetSampleResourceCollection(
-            CollectionRequest request,
+            ResourceCollectionRequest request,
             IEnumerable<MySampleValue> values)
         {
             var r = _resourceFactory.Create(Url.LinkUri("getallvalues"))
@@ -44,7 +45,7 @@ namespace dFakto.Rest.SampleApi.Controllers
         // GET api/values
         [HttpGet()]
         [Route("",Name="getallvalues")]
-        public ActionResult<IResource> Get([FromQuery] CollectionRequest request)
+        public ActionResult<IResource> Get([FromQuery] ResourceCollectionRequest request)
         {
             return Ok(GetSampleResourceCollection(request,_repository.List(new CollectionRequestSpecification<MySampleValue>(request))));
         }

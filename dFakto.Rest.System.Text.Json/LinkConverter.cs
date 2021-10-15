@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
@@ -68,7 +67,7 @@ namespace dFakto.Rest.System.Text.Json
                     case MethodsPropertyName:
                         if (reader.TokenType != JsonTokenType.StartArray)
                         {
-                            throw new JsonException("Method must be an array");
+                            throw new JsonException("Method property must be an array");
                         }
                         while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
                         {

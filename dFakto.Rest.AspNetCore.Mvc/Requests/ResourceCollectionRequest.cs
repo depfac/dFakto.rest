@@ -1,9 +1,9 @@
 using System;
 using Microsoft.AspNetCore.Mvc;
 
-namespace dFakto.Rest.AspNetCore.Mvc
+namespace dFakto.Rest.AspNetCore.Mvc.Requests
 {
-    public class CollectionRequest : ResourceRequest
+    public class ResourceCollectionRequest : ResourceRequest
     {
         /// <summary>
         /// Comma separated list of fields to sort. If field name starts with a '-', the sort must be descending

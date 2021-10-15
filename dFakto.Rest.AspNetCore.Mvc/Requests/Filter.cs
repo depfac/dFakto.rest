@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace dFakto.Rest.AspNetCore.Mvc
+namespace dFakto.Rest.AspNetCore.Mvc.Requests
 {
     public enum FilterOperator
     {

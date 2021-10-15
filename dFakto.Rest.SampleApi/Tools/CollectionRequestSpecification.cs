@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Ardalis.Specification;
 using dFakto.Rest.AspNetCore.Mvc;
+using dFakto.Rest.AspNetCore.Mvc.Requests;
 
 namespace dFakto.Rest.SampleApi.Tools
 {
@@ -13,19 +14,19 @@ namespace dFakto.Rest.SampleApi.Tools
         // ReSharper disable once StaticMemberInGenericType
         private static readonly MemberInfo ValueFilterMemberInfo = typeof(Filter).GetMember("Value")[0];
         
-        public CollectionRequestSpecification(CollectionRequest collectionRequest)
+        public CollectionRequestSpecification(ResourceCollectionRequest resourceCollectionRequest)
         {
-            ApplyFilter(collectionRequest.Filter);
-            ApplyOrderBy(collectionRequest.Sort);
+            ApplyFilter(resourceCollectionRequest.Filter);
+            ApplyOrderBy(resourceCollectionRequest.Sort);
 
-            if (collectionRequest.Index.HasValue)
+            if (resourceCollectionRequest.Index.HasValue)
             {
-                Query.Skip(collectionRequest.Index.Value);
+                Query.Skip(resourceCollectionRequest.Index.Value);
             }
 
-            if (collectionRequest.Limit.HasValue)
+            if (resourceCollectionRequest.Limit.HasValue)
             {
-                Query.Take(collectionRequest.Limit.Value);
+                Query.Take(resourceCollectionRequest.Limit.Value);
             }
         }
 

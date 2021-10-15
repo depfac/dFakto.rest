@@ -2,9 +2,9 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace dFakto.Rest.AspNetCore.Mvc
+namespace dFakto.Rest.AspNetCore.Mvc.Requests
 {
-    public class FilterModelBinder : IModelBinder
+    internal class FilterModelBinder : IModelBinder
     {
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {
