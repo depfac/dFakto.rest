@@ -47,7 +47,7 @@ namespace dFakto.Rest.SampleApi
             
             services.AddExpandMiddleware(o => o.RequestTimeout = 10);
             
-            services.AddRest(new JsonSerializerOptions()
+            services.AddSystemTextJsonResources(new JsonSerializerOptions()
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
