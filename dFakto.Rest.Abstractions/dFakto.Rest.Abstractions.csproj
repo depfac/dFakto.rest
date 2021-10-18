@@ -3,16 +3,20 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageVersion>1.0.0-beta1</PackageVersion>
+        <PackageVersion>1.0.0-beta2</PackageVersion>
         <Copyright>© dFakto 2019-2020</Copyright>
         <PackageProjectUrl>https://github.com/depfac/dfakto.rest</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/depfac/dfakto.rest</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <PackageReleaseNotes>First draft</PackageReleaseNotes>
         <Title>dFakto.Rest</Title>
         <LangVersion>latestmajor</LangVersion>
         <Nullable>enable</Nullable>
     </PropertyGroup>
+
+    <ItemGroup>
+      <None Include="..\README.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
 
 </Project>
