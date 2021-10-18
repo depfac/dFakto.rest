@@ -5,6 +5,13 @@
         <Nullable>enable</Nullable>
         <LangVersion>latestmajor</LangVersion>
         <PackageVersion>1.0.0-beta1</PackageVersion>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/depfac/dfakto.rest</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageReleaseNotes>First draft</PackageReleaseNotes>
+        <Title>dFakto.Rest.System.Text.Json</Title>
+        <LangVersion>latestmajor</LangVersion>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
