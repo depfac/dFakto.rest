@@ -94,7 +94,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
         private async Task AutoExpandResource(Stream inputStream, HttpContext context, string[] expands)
         {
             _logger.LogDebug("Loading Resource Response");
-            var resource = await _resourceSerializer.Deserialize(inputStream);
+            var resource = await _resourceSerializer.Deserialize(inputStream) ?? throw new InvalidOperationException("Unable to deserialize Resource");
 
             bool changed = false;
 

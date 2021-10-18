@@ -46,12 +46,14 @@ namespace dFakto.Rest.SampleApi
             services.AddSingleton<SampleRepository>();
             
             services.AddExpandMiddleware(o => o.RequestTimeout = 10);
-            
-            services.AddSystemTextJsonResources(new JsonSerializerOptions()
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
-            });
+
+            services.AddSystemTextJsonResources(x =>
+                {
+                    x.ForceUseOfArraysForSingleElements = false;
+                    x.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                    x.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
+                }
+            );
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

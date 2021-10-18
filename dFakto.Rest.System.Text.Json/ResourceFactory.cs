@@ -7,17 +7,17 @@ namespace dFakto.Rest.System.Text.Json
 {
     public class ResourceFactory : IResourceFactory
     {
-        private readonly JsonSerializerOptions _jsonSerializerOptions;
+        private readonly ResourceSerializerOptions _jsonSerializerOptions;
 
-        public ResourceFactory(JsonSerializerOptions? jsonSerializerOptions = null)
+        public ResourceFactory(ResourceSerializerOptions jsonSerializerOptions)
         {
-            _jsonSerializerOptions = jsonSerializerOptions ?? new JsonSerializerOptions(JsonSerializerDefaults.General);
-            _jsonSerializerOptions.Converters.Add(new ResourceConverterFactory());
+            _jsonSerializerOptions = jsonSerializerOptions;
+            _jsonSerializerOptions.JsonSerializerOptions.Converters.Add(new ResourceConverterFactory(jsonSerializerOptions));
         }
         
         public IResource Create(Uri self)
         {
-            var r = new Resource(_jsonSerializerOptions);
+            var r = new Resource(_jsonSerializerOptions.JsonSerializerOptions);
             r.AddLink(Constants.Self, new Link(self));
             return r;
         }

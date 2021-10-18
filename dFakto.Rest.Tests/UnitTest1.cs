@@ -38,7 +38,11 @@ namespace dFakto.Rest.Tests
              var options = new JsonSerializerOptions();
              options.WriteIndented = true;
              options.Converters.Add(new JsonStringEnumConverter());
-             _factory = new ResourceFactory(options);
+             _factory = new ResourceFactory(new ResourceSerializerOptions
+             {
+                 ForceUseOfArraysForSingleElements = true,
+                 JsonSerializerOptions = options
+             });
              _serializer = _factory.CreateSerializer();
          }
          
@@ -158,6 +162,8 @@ namespace dFakto.Rest.Tests
              var selfUri = new Uri("http://someuri");
 
              var r = _factory.Create(selfUri).AddLink("sample",l);
+
+             var json = _factory.CreateSerializer().Serialize(r).Result;
 
              Assert.Contains("sample", r.Links.Keys);
              
