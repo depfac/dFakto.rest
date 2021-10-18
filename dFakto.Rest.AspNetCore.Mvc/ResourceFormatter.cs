@@ -26,7 +26,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
             OutputFormatterWriteContext context, Encoding selectedEncoding)
         {
             var httpContext = context.HttpContext;
-            var jsonConverter = httpContext.RequestServices.GetService<IResourceSerializer>();
+            var jsonConverter = httpContext.RequestServices.GetService<IResourceFactory>().CreateSerializer();
 
             await httpContext.Response.WriteAsync(
                 await jsonConverter.Serialize((IResource) context.Object),
@@ -44,7 +44,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
         public override async Task<InputFormatterResult> ReadRequestBodyAsync(InputFormatterContext context, Encoding effectiveEncoding)
         {
             var httpContext = context.HttpContext;
-            var jsonConverter = httpContext.RequestServices.GetService<IResourceSerializer>();
+            var jsonConverter = httpContext.RequestServices.GetService<IResourceFactory>().CreateSerializer();
             return await InputFormatterResult.SuccessAsync(await jsonConverter.Deserialize(httpContext.Request.Body));
         }
     }

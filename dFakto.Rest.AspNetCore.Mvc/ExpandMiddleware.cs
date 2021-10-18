@@ -39,12 +39,12 @@ namespace dFakto.Rest.AspNetCore.Mvc
         private readonly IResourceSerializer _resourceSerializer;
         private readonly ILogger<ExpandMiddleware> _logger;
 
-        public ExpandMiddleware(RequestDelegate next, ExpandMiddlewareOptions middlewareOptions, IResourceSerializer resourceSerializer, ILogger<ExpandMiddleware> logger)
+        public ExpandMiddleware(RequestDelegate next, ExpandMiddlewareOptions middlewareOptions, IResourceFactory resourceFactory, ILogger<ExpandMiddleware> logger)
         {
             _next = next;
             _middlewareOptions = middlewareOptions;
+            _resourceSerializer = resourceFactory.CreateSerializer();
             _logger = logger;
-            _resourceSerializer = resourceSerializer;
         }
 
         public async Task Invoke(HttpContext context)
