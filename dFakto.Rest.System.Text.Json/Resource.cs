@@ -27,6 +27,11 @@ namespace dFakto.Rest.System.Text.Json
 
         public IReadOnlyDictionary<string, IReadOnlyList<IResource>> Embedded => _embedded
             .ToDictionary(x => x.Key, x =>(IReadOnlyList<IResource>) x.Value);
+
+        public IResource AddLink(string name, Uri href)
+        {
+            return AddLink(name, new Link(href));
+        }
         
         public IResource AddLink(string name, params Link[] links)
         {
@@ -109,9 +114,9 @@ namespace dFakto.Rest.System.Text.Json
             return As<T>();
         }
 
-        internal string JsonObjectValues { get; private set; } = "{}";
+        internal byte[] JsonObjectValues { get; private set; } = Encoding.UTF8.GetBytes("{}");
 
-        private string MergeJsonDocument(JsonDocument newDocument)
+        private byte[] MergeJsonDocument(JsonDocument newDocument)
         {
             var outputBuffer = new ArrayBufferWriter<byte>();
 
@@ -146,7 +151,7 @@ namespace dFakto.Rest.System.Text.Json
                 jsonWriter.WriteEndObject();
             }
 
-            return Encoding.UTF8.GetString(outputBuffer.WrittenSpan);
+            return outputBuffer.WrittenSpan.ToArray();
         }
 
         private static void EnsurePropertyNameIsNotReserved(JsonProperty property)

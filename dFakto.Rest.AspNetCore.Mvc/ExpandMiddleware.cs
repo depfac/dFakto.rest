@@ -148,7 +148,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
                 return null;
             }
 
-            if (link.Methods.Count > 0 && !link.Methods.Contains(HttpMethod.Get))
+            if (link.Methods.Length > 0 && !link.Methods.Contains(HttpMethod.Get))
             {
                 return null;
             }

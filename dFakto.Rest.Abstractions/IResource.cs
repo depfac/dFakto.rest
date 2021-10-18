@@ -23,6 +23,8 @@ namespace dFakto.Rest.Abstractions
         /// Embedded Resources
         /// </summary>
         IReadOnlyDictionary<string,  IReadOnlyList<IResource>> Embedded  { get; }
+
+        IResource AddLink(string name, Uri href);
         
         /// <summary>
         /// Add Link to the resource

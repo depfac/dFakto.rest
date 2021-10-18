@@ -145,18 +145,16 @@ namespace dFakto.Rest.Tests
          [Fact]
          public void Test_Add_Link()
          {
-             var l = new Link(new Uri("http://mylinkuri"))
-             {
-                 Deprecation = "http://seedeprecationhowto",
-                 Hreflang = "fr_FR",
-                 Name = "other_name",
-                 Profile = "http://myprofile",
-                 Templated = true,
-                 Title = "Sample link",
-                 Type = "application/pdf",
-                 Methods = new []{HttpMethod.Delete, HttpMethod.Put, }
-             };
-
+             var l = new Link(new Uri("http://mylinkuri"),
+                 deprecation: "http://seedeprecationhowto",
+                 hrefLang: "fr_FR",
+                 name: "other_name",
+                 profile: "http://myprofile",
+                 templated:  true,
+                 title: "Sample link",
+                 type: "application/pdf",
+                 methods: new []{HttpMethod.Delete, HttpMethod.Head});
+             
              var selfUri = new Uri("http://someuri");
 
              var r = _factory.Create(selfUri).AddLink("sample",l);
@@ -197,7 +195,6 @@ namespace dFakto.Rest.Tests
              var r = _factory.Create(selfUri);
 
              Assert.Throws<ArgumentException>(() => r.AddLink(null, (Link) null));
-             Assert.Throws<ArgumentException>(() => r.AddLink(null, null));
              Assert.Throws<ArgumentException>(() => r.AddEmbedded(null, _factory.Create(selfUri)));
              Assert.Throws<ArgumentException>(() => r.AddEmbedded(null, (IEnumerable<IResource>) null));
              Assert.Throws<ArgumentException>(() => r.AddEmbedded(string.Empty, _factory.Create(selfUri)));
