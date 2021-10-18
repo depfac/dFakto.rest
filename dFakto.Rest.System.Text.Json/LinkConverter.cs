@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
@@ -24,15 +25,29 @@ namespace dFakto.Rest.System.Text.Json
             if (reader.TokenType != JsonTokenType.StartObject)
                 throw new JsonException();
 
-            Link l = new Link();
+            Uri? href = null;
+            string? title = null;
+            bool templated = false;
+            string? deprecation = null;
+            string? name = null;
+            string? profile = null;
+            string? type = null;
+            string? hreflang = null;
+            List<HttpMethod> methods = new List<HttpMethod>();
+            
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
-                    return l;
+                {
+                    if (href == null)
+                        throw new JsonException("Link must have an href");
+                 
+                    return new Link(href,title,type,name,templated,deprecation,hreflang,profile,methods.ToArray());   
+                }
                 if (reader.TokenType != JsonTokenType.PropertyName)
                     throw new JsonException();
 
-                string property = reader.GetString() ?? throw new InvalidOperationException("Unable to retrieve Property Name");
+                string property = reader.GetString() ?? throw new JsonException("Unable to retrieve Property Name");
                 reader.Read();
                 
                 switch (property)
@@ -40,29 +55,29 @@ namespace dFakto.Rest.System.Text.Json
                     case HrefPropertyName:
                         if (reader.TokenType != JsonTokenType.Null)
                         {
-                            l.Href = new Uri(reader.GetString()!);
+                            href = new Uri(reader.GetString()!);
                         }
                         break;
                     case DeprecationPropertyName:
-                        l.Deprecation = reader.GetString();
+                        deprecation = reader.GetString();
                         break;
                     case LangPropertyName:
-                        l.Hreflang = reader.GetString();
+                        hreflang = reader.GetString();
                         break;
                     case NamePropertyName:
-                        l.Name = reader.GetString();
+                        name = reader.GetString();
                         break;
                     case ProfilePropertyName:
-                        l.Profile = reader.GetString();
+                        profile = reader.GetString();
                         break;
                     case TemplatedPropertyName:
-                        l.Templated = reader.GetBoolean();
+                        templated = reader.GetBoolean();
                         break;
                     case TitlePropertyName:
-                        l.Title = reader.GetString();
+                        title = reader.GetString();
                         break;
                     case TypePropertyName:
-                        l.Type = reader.GetString();
+                        type = reader.GetString();
                         break;
                     case MethodsPropertyName:
                         if (reader.TokenType != JsonTokenType.StartArray)
@@ -71,7 +86,7 @@ namespace dFakto.Rest.System.Text.Json
                         }
                         while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
                         {
-                            l.Methods.Add(new HttpMethod(reader.GetString()));
+                            methods.Add(new HttpMethod(reader.GetString()));
                         }
                         break;
                 }
