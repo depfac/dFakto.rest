@@ -15,7 +15,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Pack="true" PackagePath="\"/>
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
     
     <ItemGroup>
@@ -25,6 +25,7 @@
     
     <ItemGroup>
       <ProjectReference Include="..\dFakto.Rest.Abstractions\dFakto.Rest.Abstractions.csproj" />
+      <ProjectReference Include="..\dFakto.Rest.System.Text.Json\dFakto.Rest.System.Text.Json.csproj" />
     </ItemGroup>
     
 </Project>

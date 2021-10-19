@@ -35,12 +35,13 @@ namespace dFakto.Rest.Tests
          private readonly IResourceSerializer _serializer;
          public UnitTest1()
          {
-             var options = new JsonSerializerOptions();
-             options.WriteIndented = true;
+             var options = new JsonSerializerOptions
+             {
+                 WriteIndented = true
+             };
              options.Converters.Add(new JsonStringEnumConverter());
              _factory = new ResourceFactory(new ResourceSerializerOptions
              {
-                 ForceUseOfArraysForSingleElements = true,
                  JsonSerializerOptions = options
              });
              _serializer = _factory.CreateSerializer();
@@ -100,9 +101,8 @@ namespace dFakto.Rest.Tests
 
              var r = _factory.Create(selfUri).Add(new MyModel
              {
-                 Integer = 123456789,
-                 Test = "Some Text"
-             }, x => new {x.Integer});
+                 Integer = 123456789
+             });
 
              var m = r.As<MyModel>();
              
@@ -301,7 +301,6 @@ namespace dFakto.Rest.Tests
              r.AddLink("prev", new Link("http://ddfdfdfddf/prev"))
                  .AddLink("next", new Link("http://ddfdfdfddf/next"))
                  .Add(new {testint=13})
-                 .Add(GetModel(), x => new {x.Double})
                  .Add(GetModel())
                  .Add(new {testurl="http://dfdfdfdf"} )
                  .AddEmbedded("same", embedde)

@@ -10,13 +10,6 @@ namespace dFakto.Rest.System.Text.Json
 {
     internal class ResourceConverterFactory : JsonConverterFactory
     {
-        private readonly ResourceSerializerOptions _options;
-
-        public ResourceConverterFactory(ResourceSerializerOptions options)
-        {
-            _options = options;
-        }
-        
         public override bool CanConvert(Type typeToConvert)
         {
             return typeToConvert == typeof(IResource) || typeToConvert == typeof(Resource);
@@ -26,20 +19,17 @@ namespace dFakto.Rest.System.Text.Json
             Type type,
             JsonSerializerOptions options)
         {
-            return new ResourceConverter(_options);
+            return new ResourceConverter();
         }
     }
 
     internal class ResourceConverter : JsonConverter<IResource>
     {
-        private readonly ResourceSerializerOptions _resourceSerializerOptions;
-
         private delegate T DeserializeFunc<out T>(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options);
         private readonly JsonConverter<Link> _linkConverter;
 
-        public ResourceConverter(ResourceSerializerOptions resourceSerializerOptions)
+        public ResourceConverter()
         {
-            _resourceSerializerOptions = resourceSerializerOptions;
             _linkConverter = new LinkConverter();
         }
         
@@ -115,7 +105,7 @@ namespace dFakto.Rest.System.Text.Json
             foreach ((string key, IReadOnlyList<Link> links) in value.Links)
             {
                 writer.WritePropertyName(GetJsonPropertyName(key, options));
-                if (links.Count == 1 && !_resourceSerializerOptions.ForceUseOfArraysForSingleElements)
+                if (links.Count == 1)
                 {
                     _linkConverter.Write(writer,links[0],options);
                 }
@@ -140,7 +130,7 @@ namespace dFakto.Rest.System.Text.Json
                     if (resources.Any())
                     {
                         writer.WritePropertyName(GetJsonPropertyName(key, options));
-                        if (resources.Count == 1 && !_resourceSerializerOptions.ForceUseOfArraysForSingleElements)
+                        if (resources.Count == 1)
                         {
                             Write(writer, resources[0], options);
                         }

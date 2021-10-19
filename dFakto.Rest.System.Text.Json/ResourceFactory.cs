@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Text.Json;
 using dFakto.Rest.Abstractions;
 
 namespace dFakto.Rest.System.Text.Json
@@ -12,7 +10,7 @@ namespace dFakto.Rest.System.Text.Json
         public ResourceFactory(ResourceSerializerOptions jsonSerializerOptions)
         {
             _jsonSerializerOptions = jsonSerializerOptions;
-            _jsonSerializerOptions.JsonSerializerOptions.Converters.Add(new ResourceConverterFactory(jsonSerializerOptions));
+            _jsonSerializerOptions.JsonSerializerOptions.Converters.Add(new ResourceConverterFactory());
         }
         
         public IResource Create(Uri self)

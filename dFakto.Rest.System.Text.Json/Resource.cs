@@ -12,6 +12,7 @@ namespace dFakto.Rest.System.Text.Json
     [JsonConverter(typeof(ResourceConverterFactory))]
     internal class Resource : IResource
     {
+        private static readonly byte[] EmptyJsonObject = Encoding.UTF8.GetBytes("{}");
         private readonly Dictionary<string, List<Link>> _links = new Dictionary<string, List<Link>>();
         private readonly Dictionary<string, List<IResource>> _embedded = new Dictionary<string, List<IResource>>();
 
@@ -84,7 +85,7 @@ namespace dFakto.Rest.System.Text.Json
             return this;
         }
 
-        public IResource Add<T>(T values, Func<T,object>? onlyFields = null) where T : class
+        public IResource Add<T>(T? values, Func<T,object>? onlyFields = null) where T : class
         {
             if (values == null)
                 return this;
@@ -114,7 +115,7 @@ namespace dFakto.Rest.System.Text.Json
             return As<T>();
         }
 
-        internal byte[] JsonObjectValues { get; private set; } = Encoding.UTF8.GetBytes("{}");
+        internal byte[] JsonObjectValues { get; private set; } = EmptyJsonObject;
 
         private byte[] MergeJsonDocument(JsonDocument newDocument)
         {

@@ -8,17 +8,17 @@ using System.Threading.Tasks;
 using dFakto.Rest.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using MediaTypeHeaderValue = Microsoft.Net.Http.Headers.MediaTypeHeaderValue;
 
 namespace dFakto.Rest.AspNetCore.Mvc
 {
-    public class ExpandMiddlewareOptions
+    public class HypermediaApplicationLanguageExpandMiddlewareOptions
     {
-        public ExpandMiddlewareOptions()
+        public HypermediaApplicationLanguageExpandMiddlewareOptions()
         {
-            SupportedMediaTypes = new List<string>();
-            SupportedMediaTypes.Add(Constants.HypertextApplicationLanguageMediaType);
+            SupportedMediaTypes = new List<string> {Constants.HypertextApplicationLanguageMediaType};
 
             RequestTimeout = 5;
         }
@@ -30,19 +30,19 @@ namespace dFakto.Rest.AspNetCore.Mvc
         public int RequestTimeout { get; set; }
     }
     
-    internal class ExpandMiddleware
+    internal class HypermediaApplicationLanguageExpandMiddleware
     {
         private const string AnyMediaType = "*/*";
         
         private readonly RequestDelegate _next;
-        private readonly ExpandMiddlewareOptions _middlewareOptions;
+        private readonly HypermediaApplicationLanguageExpandMiddlewareOptions _middlewareOptions;
         private readonly IResourceSerializer _resourceSerializer;
-        private readonly ILogger<ExpandMiddleware> _logger;
+        private readonly ILogger<HypermediaApplicationLanguageExpandMiddleware> _logger;
 
-        public ExpandMiddleware(RequestDelegate next, ExpandMiddlewareOptions middlewareOptions, IResourceFactory resourceFactory, ILogger<ExpandMiddleware> logger)
+        public HypermediaApplicationLanguageExpandMiddleware(RequestDelegate next, IOptions<HypermediaApplicationLanguageExpandMiddlewareOptions> middlewareOptions, IResourceFactory resourceFactory, ILogger<HypermediaApplicationLanguageExpandMiddleware> logger)
         {
             _next = next;
-            _middlewareOptions = middlewareOptions;
+            _middlewareOptions = middlewareOptions.Value;
             _resourceSerializer = resourceFactory.CreateSerializer();
             _logger = logger;
         }
@@ -87,7 +87,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
             }
         }
 
-        public static string[] GetMediaTypes(string headerValue) =>
+        private static string[] GetMediaTypes(string headerValue) =>
             headerValue?.Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(x => MediaTypeWithQualityHeaderValue.Parse(x).MediaType).ToArray();
 
@@ -153,10 +153,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
                 return null;
             }
 
-            return await _resourceSerializer.Deserialize(
-                await context.GetResourceStream(
-                    link.Href,
-                TimeSpan.FromSeconds(_middlewareOptions.RequestTimeout)));
+            return await context.GetResource(link.Href);
         }
     }
 }

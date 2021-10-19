@@ -1,13 +1,16 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using dFakto.Rest.Abstractions;
 using dFakto.Rest.AspNetCore.Mvc;
 using dFakto.Rest.SampleApi.Tools;
 using dFakto.Rest.System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace dFakto.Rest.SampleApi
 {
@@ -25,35 +28,22 @@ namespace dFakto.Rest.SampleApi
         {
             services.AddLogging();
 
-            services.AddCors(options =>
-            {
-                options.AddPolicy("EnableCORS",
-                    builder =>
-                    {
-                        builder.WithOrigins("http://example.com", "http://www.contoso.com");
-                        builder.AllowAnyHeader();
-                        builder.AllowCredentials();
-                        builder.WithMethods("POST");
-                    });
-            });
-            
-            services.AddControllers(x =>
-            {
-                x.InputFormatters.Add(new ResourceInputFormatter());
-                x.OutputFormatters.Add(new ResourceOutputFormatter());
-            });
-            
             services.AddSingleton<SampleRepository>();
-            
-            services.AddExpandMiddleware(o => o.RequestTimeout = 10);
 
-            services.AddSystemTextJsonResources(x =>
+            services.AddControllers(x =>
                 {
-                    x.ForceUseOfArraysForSingleElements = false;
-                    x.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                    x.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
-                }
-            );
+                    // To support application/hal+json Content Type
+                    x.AddHypermediaApplicationLanguageFormatters();
+                })
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.WriteIndented = false;
+                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                });
+
+            services.AddHypermediaApplicationLanguage(x => { x.SupportedMediaTypes.Add("application/json"); });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -71,10 +61,10 @@ namespace dFakto.Rest.SampleApi
 
             //app.UseHttpsRedirection();
             app.UseRouting();
-            
-            app.UseCors("EnableCORS");
 
-            app.UseExpandMiddleware();
+            app.UseAuthentication();
+
+            app.UseHypermediaApplicationLanguageExpandMiddleware();
             
             app.UseAuthorization();
             

@@ -25,10 +25,12 @@ namespace dFakto.Rest.AspNetCore.Mvc
         public override async Task WriteResponseBodyAsync(
             OutputFormatterWriteContext context, Encoding selectedEncoding)
         {
-            var httpContext = context.HttpContext;
-            var jsonConverter = httpContext.RequestServices.GetService<IResourceFactory>().CreateSerializer();
+            var resourceFactory = context.HttpContext.RequestServices.GetService<IResourceFactory>() ??
+                                  throw new InvalidOperationException("Unable to resolve IResourceFactory");
+            
+            var jsonConverter = resourceFactory.CreateSerializer();
 
-            await httpContext.Response.WriteAsync(
+            await context.HttpContext.Response.WriteAsync(
                 await jsonConverter.Serialize((IResource) context.Object),
                 selectedEncoding);
         }
@@ -43,9 +45,12 @@ namespace dFakto.Rest.AspNetCore.Mvc
         
         public override async Task<InputFormatterResult> ReadRequestBodyAsync(InputFormatterContext context, Encoding effectiveEncoding)
         {
-            var httpContext = context.HttpContext;
-            var jsonConverter = httpContext.RequestServices.GetService<IResourceFactory>().CreateSerializer();
-            return await InputFormatterResult.SuccessAsync(await jsonConverter.Deserialize(httpContext.Request.Body));
+            var resourceFactory = context.HttpContext.RequestServices.GetService<IResourceFactory>();
+            if (resourceFactory == null)
+                return await InputFormatterResult.FailureAsync();
+            
+            var jsonConverter = resourceFactory.CreateSerializer();
+            return await InputFormatterResult.SuccessAsync(await jsonConverter.Deserialize(context.HttpContext.Request.Body));
         }
     }
 }
