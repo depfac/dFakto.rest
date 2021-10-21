@@ -98,11 +98,11 @@ namespace dFakto.Rest.AspNetCore.Mvc
 
             bool changed = false;
 
-            foreach (var names in expands)
+            foreach (var expand in expands)
             {
-                foreach (var n in names.Split(','))
+                foreach (var expandName in expand.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 {
-                    var tokens = names.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                    var tokens = expandName.Split('.', StringSplitOptions.RemoveEmptyEntries);
                     var linkName = tokens.Length > 1 ? tokens[1] : tokens[0];
                     var embeddedName = tokens.Length > 1 ? tokens[0] : null;
 
