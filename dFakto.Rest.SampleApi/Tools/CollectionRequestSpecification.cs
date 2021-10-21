@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using Ardalis.Specification;
-using dFakto.Rest.AspNetCore.Mvc;
-using dFakto.Rest.AspNetCore.Mvc.Requests;
 
 namespace dFakto.Rest.SampleApi.Tools
 {

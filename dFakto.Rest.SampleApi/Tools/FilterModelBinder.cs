@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace dFakto.Rest.AspNetCore.Mvc.Requests
+namespace dFakto.Rest.SampleApi.Tools
 {
     internal class FilterModelBinder : IModelBinder
     {

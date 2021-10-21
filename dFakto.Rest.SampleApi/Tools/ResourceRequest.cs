@@ -1,7 +1,7 @@
 using System;
 using Microsoft.AspNetCore.Mvc;
 
-namespace dFakto.Rest.AspNetCore.Mvc.Requests
+namespace dFakto.Rest.SampleApi.Tools
 {
     /// <summary>
     /// Base Request object while requesting Ressources

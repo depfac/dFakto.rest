@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using dFakto.Rest.Abstractions;
 using dFakto.Rest.AspNetCore.Mvc;
-using dFakto.Rest.AspNetCore.Mvc.Requests;
 using dFakto.Rest.SampleApi.Tools;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
