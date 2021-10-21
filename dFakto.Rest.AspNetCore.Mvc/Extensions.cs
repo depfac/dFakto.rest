@@ -48,12 +48,12 @@ namespace dFakto.Rest.AspNetCore.Mvc
 
             services.AddSingleton<IResourceFactory>(x =>
                 {
-                    var cfg = x.GetService<IOptions<JsonOptions>>() ?? throw new ApplicationException("Unable to resolve IOptions<JsonOptions>");
+                    var cfg = x.GetService<IOptions<JsonOptions>>() ??
+                              throw new ApplicationException("Unable to resolve IOptions<JsonOptions>");
                     var config = new ResourceSerializerOptions
                     {
                         JsonSerializerOptions = cfg.Value.JsonSerializerOptions ?? new JsonSerializerOptions()
                     };
-
                     return new ResourceFactory(config);
                 }
             );
