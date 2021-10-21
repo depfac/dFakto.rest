@@ -64,8 +64,8 @@ namespace dFakto.Rest.Tests
              var r = _factory.Create(selfUri);
 
              var l = r.Links["self"];
-             Assert.NotEmpty(l);
-             Assert.Equal(selfUri,l.First().Href);
+             Assert.NotEmpty(l.Values);
+             Assert.Equal(selfUri,l.Value.Href);
              Assert.Equal(selfUri, r.Self);
          }
          
@@ -169,16 +169,16 @@ namespace dFakto.Rest.Tests
              
              var links = r.Links["sample"];
              
-             Assert.Single(links);
-             Assert.Equal(l.Deprecation, links[0].Deprecation);
-             Assert.Equal(l.Href, links[0].Href);
-             Assert.Equal(l.Hreflang, links[0].Hreflang);
-             Assert.Equal(l.Name, links[0].Name);
-             Assert.Equal(l.Profile, links[0].Profile);
-             Assert.Equal(l.Templated, links[0].Templated);
-             Assert.Equal(l.Title, links[0].Title);
-             Assert.Equal(l.Type, links[0].Type);
-             Assert.Equal(l.Methods, links[0].Methods);
+             Assert.Single(links.Values);
+             Assert.Equal(l.Deprecation, links.Value.Deprecation);
+             Assert.Equal(l.Href, links.Value.Href);
+             Assert.Equal(l.Hreflang, links.Value.Hreflang);
+             Assert.Equal(l.Name, links.Value.Name);
+             Assert.Equal(l.Profile, links.Value.Profile);
+             Assert.Equal(l.Templated, links.Value.Templated);
+             Assert.Equal(l.Title, links.Value.Title);
+             Assert.Equal(l.Type, links.Value.Type);
+             Assert.Equal(l.Methods, links.Value.Methods);
          }
 
          
@@ -223,28 +223,28 @@ namespace dFakto.Rest.Tests
 
              var r = _factory.Create(selfUri);
 
-             r.AddLink("sample", l, l2);
+             r.AddLink("sample", new[] {l, l2});
              
              var links = r.Links["sample"];
              
-             Assert.Equal(2, links.Count);
-             Assert.Equal(l.Href,links[0].Href);
-             Assert.Equal(l2.Href,links[1].Href);
+             Assert.Equal(2, links.Values.Count());
+             Assert.Equal(l.Href,links.Values.First().Href);
+             Assert.Equal(l2.Href,links.Values.Last().Href);
              
              //Override previous links
              r.AddLink("sample", l3);
              
              links = r.Links["sample"];
              
-             Assert.Single(links);
-             Assert.Equal(l3.Href,links[0].Href);
+             Assert.Single(links.Values);
+             Assert.Equal(l3.Href,links.Value.Href);
              
-             r.AddLink("sample", l, null, l2);
+             r.AddLink("sample", new []{ l, null, l2});
              links = r.Links["sample"];
              
-             Assert.Equal(2, links.Count);
-             Assert.Equal(l.Href,links[0].Href);
-             Assert.Equal(l2.Href,links[1].Href);
+             Assert.Equal(2, links.Values.Count());
+             Assert.Equal(l.Href,links.Values.First().Href);
+             Assert.Equal(l2.Href,links.Values.Last().Href);
          }
          
          [Fact]
@@ -259,9 +259,9 @@ namespace dFakto.Rest.Tests
              
              Assert.Contains("test",r.Embedded.Keys);
              Assert.Single(r.Embedded);
-             Assert.Equal(selfUri,r.Embedded["test"].First().Self);
+             Assert.Equal(selfUri,r.Embedded["test"].Value.Self);
 
-             r.AddEmbedded("test", e, e);
+             r.AddEmbedded("test", new []{e,e});
              
              Assert.Contains("test",r.Embedded.Keys);
              Assert.Single(r.Embedded);
@@ -269,8 +269,8 @@ namespace dFakto.Rest.Tests
              var emm = r.Embedded["test"];
              
              Assert.Equal(2,emm.Count);
-             Assert.Equal(selfUri, emm[0].Self);
-             Assert.Equal(selfUri, emm[1].Self);
+             Assert.Equal(selfUri, emm.Values.First().Self);
+             Assert.Equal(selfUri, emm.Values.Last().Self);
          }
 
          [Fact]

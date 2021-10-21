@@ -12,10 +12,10 @@ namespace dFakto.Rest.System.Text.Json
     [JsonConverter(typeof(ResourceConverterFactory))]
     internal class Resource : IResource
     {
-        private static readonly byte[] EmptyJsonObject = Encoding.UTF8.GetBytes("{}");
-        private readonly Dictionary<string, List<Link>> _links = new Dictionary<string, List<Link>>();
-        private readonly Dictionary<string, List<IResource>> _embedded = new Dictionary<string, List<IResource>>();
 
+        private static readonly byte[] EmptyJsonObject = Encoding.UTF8.GetBytes("{}");
+        private readonly Dictionary<string, SingleOrList<Link>> _links = new Dictionary<string, SingleOrList<Link>>();
+        private readonly Dictionary<string, SingleOrList<IResource>> _embedded = new Dictionary<string, SingleOrList<IResource>>();
         private readonly JsonSerializerOptions _serializerSettings;
 
         public Resource(JsonSerializerOptions serializerSettings)
@@ -23,25 +23,34 @@ namespace dFakto.Rest.System.Text.Json
             _serializerSettings = serializerSettings;
         }
 
-        public IReadOnlyDictionary<string, IReadOnlyList<Link>> Links => _links
-            .ToDictionary(x => x.Key, x =>(IReadOnlyList<Link>) x.Value);
+        public IReadOnlyDictionary<string, SingleOrList<Link>> Links => _links
+            .ToDictionary(x => x.Key, x => x.Value);
 
-        public IReadOnlyDictionary<string, IReadOnlyList<IResource>> Embedded => _embedded
-            .ToDictionary(x => x.Key, x =>(IReadOnlyList<IResource>) x.Value);
+        public IReadOnlyDictionary<string, SingleOrList<IResource>> Embedded => _embedded
+            .ToDictionary(x => x.Key, x => x.Value);
 
         public IResource AddLink(string name, Uri href)
         {
             return AddLink(name, new Link(href));
         }
         
-        public IResource AddLink(string name, params Link[] links)
+        public IResource AddLink(string name, Link link)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException(nameof(name));
-            if (links == null)
-                throw new ArgumentNullException(nameof(links));
-            
-            return AddLink(name,(IEnumerable<Link>) links);
+            if (link == null)
+                throw new ArgumentNullException(nameof(link));
+
+            return AddLink(name, new SingleOrList<Link>(link));
+        }
+
+        internal IResource AddLink(string name, SingleOrList<Link> link)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException(nameof(name));
+
+            _links[name] = link ?? throw new ArgumentNullException(nameof(link));
+            return this;
         }
         
         public IResource AddLink(string name, IEnumerable<Link> links)
@@ -51,23 +60,32 @@ namespace dFakto.Rest.System.Text.Json
             if (links == null)
                 throw new ArgumentNullException(nameof(links));
             
-            if (_links.ContainsKey(name))
+            if (_links.ContainsKey(name) && _links[name].SingleValued)
             {
                 _links.Remove(name);
             }
-            _links.Add(name, new List<Link>(links.Where(x => x != null)));
+
+            if (_links.ContainsKey(name))
+            {
+                _links[name].AddRange(links);
+            }
+            else
+            {
+                AddLink(name, new SingleOrList<Link>(links.Where(x => x != null)));
+            }
 
             return this;
         }
 
-        public IResource AddEmbedded(string name, params IResource[] embedded)
+        public IResource AddEmbedded(string name, IResource embedded)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException(nameof(name));
             if (embedded == null)
                 throw new ArgumentNullException(nameof(embedded));
-            
-            return AddEmbedded(name,(IEnumerable<IResource>) embedded);
+
+            return AddEmbedded(name, new SingleOrList<IResource>(embedded));
+
         }
         
         public IResource AddEmbedded(string name, IEnumerable<IResource> embedded)
@@ -76,12 +94,30 @@ namespace dFakto.Rest.System.Text.Json
                 throw new ArgumentException(nameof(name));
             if (embedded == null)
                 throw new ArgumentNullException(nameof(embedded));
-            
-            if (_embedded.ContainsKey(name))
+
+            if (_embedded.ContainsKey(name) && _embedded[name].SingleValued)
             {
                 _embedded.Remove(name);
             }
-            _embedded.Add(name,new List<IResource>(embedded.Where(x => x != null)));
+
+            if (_embedded.ContainsKey(name))
+            {
+                _embedded[name].AddRange(embedded);
+            }
+            else
+            {
+                AddEmbedded(name, new SingleOrList<IResource>(embedded));
+            }
+            
+            return this;
+        }
+        
+        internal IResource AddEmbedded(string name, SingleOrList<IResource> embedded)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException(nameof(name));
+
+            _embedded[name] = embedded ?? throw new ArgumentNullException(nameof(embedded));
             return this;
         }
 

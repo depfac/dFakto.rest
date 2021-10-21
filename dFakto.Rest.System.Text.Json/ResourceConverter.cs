@@ -26,7 +26,7 @@ namespace dFakto.Rest.System.Text.Json
     internal class ResourceConverter : JsonConverter<IResource>
     {
         private delegate T DeserializeFunc<out T>(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options);
-        private readonly JsonConverter<Link> _linkConverter;
+        private readonly LinkConverter _linkConverter;
 
         public ResourceConverter()
         {
@@ -60,7 +60,7 @@ namespace dFakto.Rest.System.Text.Json
                             var links = ReadObjectorArray(ref reader, options, _linkConverter.Read);
                             foreach (var l in links)
                             {
-                                resource.AddLink(l.Key, l.Value.Where(x => x != null).Cast<Link>());
+                                resource.AddLink(l.Key, l.Value);
                             }
 
                             break;
@@ -102,17 +102,17 @@ namespace dFakto.Rest.System.Text.Json
 
             writer.WritePropertyName(Constants.Links);
             writer.WriteStartObject();
-            foreach ((string key, IReadOnlyList<Link> links) in value.Links)
+            foreach ((string key, SingleOrList<Link> links) in value.Links)
             {
                 writer.WritePropertyName(GetJsonPropertyName(key, options));
-                if (links.Count == 1)
+                if (links.SingleValued)
                 {
-                    _linkConverter.Write(writer,links[0],options);
+                    _linkConverter.Write(writer,links.Value,options);
                 }
                 else
                 {
                     writer.WriteStartArray();
-                    foreach (var link in links)
+                    foreach (var link in links.Values)
                     {
                         _linkConverter.Write(writer,link,options);
                     }
@@ -121,31 +121,29 @@ namespace dFakto.Rest.System.Text.Json
             }
             writer.WriteEndObject();
 
-            if (value.Embedded.Any() && value.Embedded.Any(x => x.Value.Any()))
+            if (value.Embedded.Any())
             {
                 writer.WritePropertyName(Constants.Embedded);
                 writer.WriteStartObject();
-                foreach ((string key, IReadOnlyList<IResource> resources) in value.Embedded)
+                foreach ((string key, SingleOrList<IResource> resources) in value.Embedded)
                 {
-                    if (resources.Any())
+                    writer.WritePropertyName(GetJsonPropertyName(key, options));
+                    if (resources.SingleValued)
                     {
-                        writer.WritePropertyName(GetJsonPropertyName(key, options));
-                        if (resources.Count == 1)
+                        Write(writer, resources.Value, options);
+                    }
+                    else
+                    {
+                        writer.WriteStartArray();
+                        foreach (var r in resources.Values)
                         {
-                            Write(writer, resources[0], options);
+                            Write(writer, r, options);
                         }
-                        else
-                        {
-                            writer.WriteStartArray();
-                            foreach (var r in resources)
-                            {
-                                Write(writer, r, options);
-                            }
 
-                            writer.WriteEndArray();
-                        }
+                        writer.WriteEndArray();
                     }
                 }
+
                 writer.WriteEndObject();
             }
 
@@ -173,7 +171,7 @@ namespace dFakto.Rest.System.Text.Json
             return propertyName;
         }
 
-        private static Dictionary<string, IList<T>> ReadObjectorArray<T>(
+        private static Dictionary<string, SingleOrList<T>> ReadObjectorArray<T>(
             ref Utf8JsonReader reader,
             JsonSerializerOptions options,
             DeserializeFunc<T> objReader)
@@ -183,8 +181,8 @@ namespace dFakto.Rest.System.Text.Json
                 throw new JsonException();
             }
 
-            var result = new Dictionary<string, IList<T>>();
-
+            var result = new Dictionary<string, SingleOrList<T>>();
+           
             while (reader.Read())
             {
                 if (reader.TokenType == JsonTokenType.EndObject)
@@ -192,24 +190,24 @@ namespace dFakto.Rest.System.Text.Json
                     break;
                 }
                 
-                var embeddedName = ReadPropertyName(ref reader);
-                var resources = new List<T>();
-                result.Add(embeddedName,resources);
+                string propertyName = ReadPropertyName(ref reader);
 
                 if (reader.TokenType == JsonTokenType.StartArray)
                 {
+                    var items = new List<T>();
                     while (reader.Read())
                     {
                         if (reader.TokenType == JsonTokenType.EndArray)
                         {
+                            result.Add(propertyName,new SingleOrList<T>(items));
                             break;
                         }
-                        resources.Add(objReader(ref reader,typeof(T), options));
+                        items.Add(objReader(ref reader,typeof(T), options));
                     }
                 }
                 else if(reader.TokenType == JsonTokenType.StartObject)
                 {
-                    resources.Add(objReader(ref reader,typeof(T), options));
+                    result.Add(propertyName,new SingleOrList<T>(objReader(ref reader,typeof(T), options)));
                 }
                 else
                 {

@@ -111,18 +111,31 @@ namespace dFakto.Rest.AspNetCore.Mvc
 
                     if (!string.IsNullOrEmpty(embeddedName) && resource.Embedded.ContainsKey(embeddedName))
                     {
-                        foreach (var r in resource.Embedded[embeddedName])
+                        foreach (var r in resource.Embedded[embeddedName].Values)
                         {
                             if (r.Links.ContainsKey(linkName))
                             {
-                                r.AddEmbedded(linkName, await GetResourceAsync(r.Links[linkName].First(), context));
+                                if (r.Links[linkName].SingleValued)
+                                {
+                                    r.AddEmbedded(linkName, await GetResourceAsync(r.Links[linkName].Value, context));
+                                }
+                                else
+                                {
+                                    List<IResource> resources = new List<IResource>();
+                                    foreach (var link in r.Links[linkName].Values)
+                                    {
+                                        resources.Add(await GetResourceAsync(link, context));
+                                    }
+                                    r.AddEmbedded(linkName, resources);
+                                }
+                                
                                 changed = true;
                             }
                         }
                     }
                     else if (resource.Links.Keys.Contains(linkName) && !resource.Embedded.Keys.Contains(linkName))
                     {
-                        resource.AddEmbedded(linkName, await GetResourceAsync(resource.Links[linkName].First(), context));
+                        resource.AddEmbedded(linkName, await GetResourceAsync(resource.Links[linkName].Value, context));
                         changed = true;
                     }
                 }
