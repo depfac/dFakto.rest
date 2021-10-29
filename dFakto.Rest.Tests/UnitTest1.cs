@@ -37,7 +37,8 @@ namespace dFakto.Rest.Tests
          {
              var options = new JsonSerializerOptions
              {
-                 WriteIndented = true
+                 WriteIndented = true,
+                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
              };
              options.Converters.Add(new JsonStringEnumConverter());
              _factory = new ResourceFactory(new ResourceSerializerOptions
@@ -289,6 +290,16 @@ namespace dFakto.Rest.Tests
              Assert.Equal(m.Test,m2.Test);
              Assert.Equal(m.Uri,m2.Uri);
          }
+         
+         [Fact]
+         public void Test_As_Method_Case_Insensitive()
+         {
+             var m = GetModel();
+             var selfUri = new Uri("http://embedded");
+             var m2 = _factory.Create(selfUri).Add(m).Bind(new {date = DateTime.Now});
+             
+             Assert.Equal(m.Date,m2.date);
+         }
 
          [Fact]
          public async Task TestSerializer()
@@ -314,45 +325,7 @@ namespace dFakto.Rest.Tests
              Assert.Equal(json,await _serializer.Serialize(r2));
 
          }
-//
-//         [Fact]
-//         public void Test_NamingConvention()
-//         {
-//             var r = CreateResource().Add("NAME", "hello");
-//             
-//             Assert.Equal("hello",r.GetField<string>("NAME"));
-//             Assert.True(r.ContainsField("NAME"));
-//             Assert.True(r.ContainsField("name"));
-//             Assert.False(r.ContainsField("nAME"));
-//
-//             r.AddLink("LINK", "http://sss");
-//             Assert.True(r.ContainsLink("link"));
-//             Assert.True(r.ContainsLink("Link"));
-//             Assert.False(r.ContainsLink("lINk"));
-//
-//             r.AddEmbeddedResource("MyResource", CreateResource());
-//             Assert.True(r.ContainsEmbeddedResource("MyResource"));
-//             Assert.True(r.ContainsEmbeddedResource("myResource"));
-//
-//             r = CreateResource(false).Add("NAME", "hello");
-//             Assert.Equal("hello",r.GetField<string>("NAME"));
-//             Assert.True(r.ContainsField("NAME"));
-//             Assert.False(r.ContainsField("name"));
-//             Assert.False(r.ContainsField("nAME"));
-//         }
-//
-//         public Resource CreateResource(bool overrideSpecificName = true)
-//         {   
-//             var ccpncr = new CamelCasePropertyNamesContractResolver();
-//             ccpncr.NamingStrategy.OverrideSpecifiedNames = overrideSpecificName;
-//             
-//             var ser = new JsonSerializerSettings();
-//             ser.ContractResolver = ccpncr;
-//             ser.NullValueHandling = NullValueHandling.Ignore;
-//             
-//
-//             ResourceBuilder builder = new ResourceBuilder(ser);
-//             return builder.Create();
-//         }
+
+         
      }
  }

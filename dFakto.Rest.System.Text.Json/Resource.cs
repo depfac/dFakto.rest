@@ -143,7 +143,7 @@ namespace dFakto.Rest.System.Text.Json
 
         public T? As<T>()
         {
-            return JsonSerializer.Deserialize<T>(JsonObjectValues);
+            return JsonSerializer.Deserialize<T>(JsonObjectValues,_serializerSettings);
         }
 
         public T? Bind<T>(T type)
