@@ -113,7 +113,7 @@ namespace dFakto.Rest.AspNetCore.Mvc
                     {
                         foreach (var r in resource.Embedded[embeddedName].Values)
                         {
-                            if (r.Links.ContainsKey(linkName))
+                            if (r.Links.ContainsKey(linkName) && !resource.Embedded.ContainsKey(linkName))
                             {
                                 if (r.Links[linkName].SingleValued)
                                 {
