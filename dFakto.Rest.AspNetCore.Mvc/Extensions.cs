@@ -15,108 +15,107 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace dFakto.Rest.AspNetCore.Mvc
+namespace dFakto.Rest.AspNetCore.Mvc;
+
+public static class Extensions
 {
-    public static class Extensions
+    /// <summary>
+    /// Add Input and Output Formatter to support application/hal+json Content Type
+    /// </summary>
+    /// <param name="x"></param>
+    /// <returns></returns>
+    public static MvcOptions AddHypermediaApplicationLanguageFormatters(this MvcOptions x)
     {
-        /// <summary>
-        /// Add Input and Output Formatter to support application/hal+json Content Type
-        /// </summary>
-        /// <param name="x"></param>
-        /// <returns></returns>
-        public static MvcOptions AddHypermediaApplicationLanguageFormatters(this MvcOptions x)
+        x.InputFormatters.Add(new ResourceInputFormatter());
+        x.OutputFormatters.Add(new ResourceOutputFormatter());
+        return x;
+    }
+
+    /// <summary>
+    /// Add support for Hypermedia Application Language Resource factory <see cref="IResourceFactory"/>
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="optionAction"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddHypermediaApplicationLanguage(
+        this IServiceCollection services,
+        Action<HypermediaApplicationLanguageExpandMiddlewareOptions> optionAction = null)
+    {
+        if (optionAction != null)
         {
-            x.InputFormatters.Add(new ResourceInputFormatter());
-            x.OutputFormatters.Add(new ResourceOutputFormatter());
-            return x;
+            services.Configure(optionAction);
         }
 
-        /// <summary>
-        /// Add support for Hypermedia Application Language Resource factory <see cref="IResourceFactory"/>
-        /// </summary>
-        /// <param name="services"></param>
-        /// <param name="optionAction"></param>
-        /// <returns></returns>
-        public static IServiceCollection AddHypermediaApplicationLanguage(
-            this IServiceCollection services,
-            Action<HypermediaApplicationLanguageExpandMiddlewareOptions> optionAction = null)
-        {
-            if (optionAction != null)
+        services.AddSingleton<IResourceFactory>(x =>
             {
-                services.Configure(optionAction);
-            }
-
-            services.AddSingleton<IResourceFactory>(x =>
+                var cfg = x.GetService<IOptions<JsonOptions>>() ??
+                          throw new ApplicationException("Unable to resolve IOptions<JsonOptions>");
+                var config = new ResourceSerializerOptions
                 {
-                    var cfg = x.GetService<IOptions<JsonOptions>>() ??
-                              throw new ApplicationException("Unable to resolve IOptions<JsonOptions>");
-                    var config = new ResourceSerializerOptions
-                    {
-                        JsonSerializerOptions = cfg.Value.JsonSerializerOptions ?? new JsonSerializerOptions()
-                    };
-                    return new ResourceFactory(config);
-                }
-            );
+                    JsonSerializerOptions = cfg.Value.JsonSerializerOptions ?? new JsonSerializerOptions()
+                };
+                return new ResourceFactory(config);
+            }
+        );
 
-            return services;
-        }
+        return services;
+    }
 
-        public static IApplicationBuilder UseHypermediaApplicationLanguageExpandMiddleware(this IApplicationBuilder applicationBuilder)
-        {
-            return applicationBuilder.UseMiddleware<HypermediaApplicationLanguageExpandMiddleware>();
-        }
+    public static IApplicationBuilder UseHypermediaApplicationLanguageExpandMiddleware(this IApplicationBuilder applicationBuilder)
+    {
+        return applicationBuilder.UseMiddleware<HypermediaApplicationLanguageExpandMiddleware>();
+    }
         
-        public static Uri LinkUri(this IUrlHelper uri, string name, object p = null)
+    public static Uri LinkUri(this IUrlHelper uri, string name, object p = null)
+    {
+        return new Uri(uri.Link(name, p));
+    }
+
+    /// <summary>
+    /// Retrieve a Resource at the given Uri.
+    /// The current Cookies and Authentication Header will be transferred to the request 
+    /// </summary>
+    /// <param name="context">HttpContext</param>
+    /// <param name="uri">Uri of the resource to retrieve</param>
+    /// <param name="requestTimeout"></param>
+    /// <param name="cancellationToken">Cancellation Token</param>
+    /// <returns>The Stream with the resource</returns>
+    public static async Task<IResource> GetResource(
+        this HttpContext context, 
+        Uri uri, 
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var factory = context.RequestServices.GetService<IResourceFactory>()
+                      ?? throw new ApplicationException("Unable to resolve IResourceFactory");
+        var options = context.RequestServices.GetService<IOptions<HypermediaApplicationLanguageExpandMiddlewareOptions>>()
+                      ?? throw new ApplicationException("Unable to resolve HypermediaApplicationLanguageExpandMiddlewareOptions");
+            
+        HttpClientHandler handler = new HttpClientHandler();
+        handler.CookieContainer = new CookieContainer();
+        foreach (var cookie in context.Request.Cookies)
         {
-            return new Uri(uri.Link(name, p));
+            handler.CookieContainer.Add(new Cookie(cookie.Key, cookie.Value) {Domain = uri.Host});
         }
 
-        /// <summary>
-        /// Retrieve a Resource at the given Uri.
-        /// The current Cookies and Authentication Header will be transferred to the request 
-        /// </summary>
-        /// <param name="context">HttpContext</param>
-        /// <param name="uri">Uri of the resource to retrieve</param>
-        /// <param name="requestTimeout"></param>
-        /// <param name="cancellationToken">Cancellation Token</param>
-        /// <returns>The Stream with the resource</returns>
-        public static async Task<IResource> GetResource(
-            this HttpContext context, 
-            Uri uri, 
-            CancellationToken cancellationToken = new CancellationToken())
+        using (HttpClient client = new HttpClient(handler))
         {
-            var factory = context.RequestServices.GetService<IResourceFactory>()
-                ?? throw new ApplicationException("Unable to resolve IResourceFactory");
-            var options = context.RequestServices.GetService<IOptions<HypermediaApplicationLanguageExpandMiddlewareOptions>>()
-                ?? throw new ApplicationException("Unable to resolve HypermediaApplicationLanguageExpandMiddlewareOptions");
-            
-            HttpClientHandler handler = new HttpClientHandler();
-            handler.CookieContainer = new CookieContainer();
-            foreach (var cookie in context.Request.Cookies)
+            client.Timeout = TimeSpan.FromSeconds(options.Value.RequestTimeout);
+                
+            HttpRequestMessage request = new HttpRequestMessage();
+            request.Method = HttpMethod.Get;
+            request.RequestUri = uri;
+            request.Headers.Accept.Clear();
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(Constants.HypertextApplicationLanguageMediaType));
+            if (context.Request.Headers.TryGetValue("Authorization", out var auth))
             {
-                handler.CookieContainer.Add(new Cookie(cookie.Key, cookie.Value) {Domain = uri.Host});
+                request.Headers.TryAddWithoutValidation("Authorization", auth.First());
             }
 
-            using (HttpClient client = new HttpClient(handler))
+            HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            await using (var stream = await response.Content.ReadAsStreamAsync())
             {
-                client.Timeout = TimeSpan.FromSeconds(options.Value.RequestTimeout);
-                
-                HttpRequestMessage request = new HttpRequestMessage();
-                request.Method = HttpMethod.Get;
-                request.RequestUri = uri;
-                request.Headers.Accept.Clear();
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(Constants.HypertextApplicationLanguageMediaType));
-                if (context.Request.Headers.TryGetValue("Authorization", out var auth))
-                {
-                    request.Headers.TryAddWithoutValidation("Authorization", auth.First());
-                }
-
-                HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
-                response.EnsureSuccessStatusCode();
-                await using (var stream = await response.Content.ReadAsStreamAsync())
-                {
-                    return await factory.CreateSerializer().Deserialize(stream);
-                }
+                return await factory.CreateSerializer().Deserialize(stream);
             }
         }
     }

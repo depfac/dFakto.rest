@@ -1,40 +1,39 @@
 using System;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace dFakto.Rest.AspNetCore.Mvc.DelimitedQueryString
+namespace dFakto.Rest.AspNetCore.Mvc.DelimitedQueryString;
+
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
+public class DelimitedQueryStringAttribute : Attribute, IResourceFilter
 {
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
-    public class DelimitedQueryStringAttribute : Attribute, IResourceFilter
+    private readonly char[] delimiters;
+
+    public DelimitedQueryStringAttribute(params char[] delimiters)
     {
-        private readonly char[] delimiters;
+        this.delimiters = delimiters;
+    }
 
-        public DelimitedQueryStringAttribute(params char[] delimiters)
+    /// <summary>
+    /// Executes the resource filter. Called after execution of the remainder of the pipeline.
+    /// </summary>
+    /// <param name="context">The <see cref="T:Microsoft.AspNetCore.Mvc.Filters.ResourceExecutedContext" />.</param>
+    public void OnResourceExecuted(ResourceExecutedContext context)
+    {
+        if (context == null)
         {
-            this.delimiters = delimiters;
+            throw new ArgumentNullException(nameof(context));
         }
 
-        /// <summary>
-        /// Executes the resource filter. Called after execution of the remainder of the pipeline.
-        /// </summary>
-        /// <param name="context">The <see cref="T:Microsoft.AspNetCore.Mvc.Filters.ResourceExecutedContext" />.</param>
-        public void OnResourceExecuted(ResourceExecutedContext context)
-        {
-            if (context == null)
-            {
-                throw new ArgumentNullException(nameof(context));
-            }
+        // Don't need to do anything.
+    }
 
-            // Don't need to do anything.
+    public void OnResourceExecuting(ResourceExecutingContext context)
+    {
+        if (context == null)
+        {
+            throw new ArgumentNullException(nameof(context));
         }
 
-        public void OnResourceExecuting(ResourceExecutingContext context)
-        {
-            if (context == null)
-            {
-                throw new ArgumentNullException(nameof(context));
-            }
-
-            context.ValueProviderFactories.AddDelimitedValueProviderFactory(this.delimiters);
-        }
+        context.ValueProviderFactories.AddDelimitedValueProviderFactory(this.delimiters);
     }
 }

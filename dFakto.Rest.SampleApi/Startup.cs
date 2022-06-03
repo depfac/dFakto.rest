@@ -39,7 +39,7 @@ namespace dFakto.Rest.SampleApi
                 {
                     options.JsonSerializerOptions.WriteIndented = false;
                     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 });
 

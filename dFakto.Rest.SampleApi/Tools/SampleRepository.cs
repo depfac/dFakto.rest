@@ -5,6 +5,11 @@ using Ardalis.Specification;
 
 namespace dFakto.Rest.SampleApi.Tools
 {
+    public enum SampleEnum
+    {
+        First, Second, Third
+    }
+    
     public class MySampleValue
     {
         public int Id { get; set; }
@@ -13,6 +18,8 @@ namespace dFakto.Rest.SampleApi.Tools
         public DateTime SomeDate { get; set; }
             
         public long SomeLong { get; set; }
+        
+        public SampleEnum SomeEnum { get; set; }
     }
     
     public class SampleRepository
@@ -42,7 +49,13 @@ namespace dFakto.Rest.SampleApi.Tools
             while (i < max)
             {
                 i++;
-                yield return new MySampleValue{Id = i,Value = "Value" + i,SomeDate = DateTime.Now.AddDays(_random.Next(-1000,1000)),SomeLong = _random.Next(10000)};
+                yield return new MySampleValue
+                {
+                    Id = i,Value = "Value" + i,
+                    SomeDate = DateTime.Now.AddDays(_random.Next(-1000,1000)),
+                    SomeLong = _random.Next(10000),
+                    SomeEnum = (SampleEnum)_random.Next(0,3)
+                };
             }
         }
 

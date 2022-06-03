@@ -3,51 +3,50 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace dFakto.Rest.AspNetCore.Mvc.DelimitedQueryString
+namespace dFakto.Rest.AspNetCore.Mvc.DelimitedQueryString;
+
+/// <summary>
+/// A <see cref="IValueProviderFactory"/> that creates <see cref="IValueProvider"/> instances that
+/// read optionally delimited values from the request query-string.
+/// </summary>
+internal class DelimitedQueryStringValueProviderFactory : IValueProviderFactory
 {
-    /// <summary>
-    /// A <see cref="IValueProviderFactory"/> that creates <see cref="IValueProvider"/> instances that
-    /// read optionally delimited values from the request query-string.
-    /// </summary>
-    internal class DelimitedQueryStringValueProviderFactory : IValueProviderFactory
+    private static readonly char[] DefaultDelimiters = new char[] { ',' };
+    private readonly char[] delimiters;
+
+    public DelimitedQueryStringValueProviderFactory()
+        : this(DefaultDelimiters)
     {
-        private static readonly char[] DefaultDelimiters = new char[] { ',' };
-        private readonly char[] delimiters;
+    }
 
-        public DelimitedQueryStringValueProviderFactory()
-            : this(DefaultDelimiters)
+    public DelimitedQueryStringValueProviderFactory(params char[] delimiters)
+    {
+        if (delimiters == null || delimiters.Length == 0)
         {
+            this.delimiters = DefaultDelimiters;
+        }
+        else
+        {
+            this.delimiters = delimiters;
+        }
+    }
+
+    /// <inheritdoc />
+    public Task CreateValueProviderAsync(ValueProviderFactoryContext context)
+    {
+        if (context == null)
+        {
+            throw new ArgumentNullException(nameof(context));
         }
 
-        public DelimitedQueryStringValueProviderFactory(params char[] delimiters)
-        {
-            if (delimiters == null || delimiters.Length == 0)
-            {
-                this.delimiters = DefaultDelimiters;
-            }
-            else
-            {
-                this.delimiters = delimiters;
-            }
-        }
+        var valueProvider = new DelimitedQueryStringValueProvider(
+            BindingSource.Query,
+            context.ActionContext.HttpContext.Request.Query,
+            CultureInfo.InvariantCulture,
+            this.delimiters);
 
-        /// <inheritdoc />
-        public Task CreateValueProviderAsync(ValueProviderFactoryContext context)
-        {
-            if (context == null)
-            {
-                throw new ArgumentNullException(nameof(context));
-            }
+        context.ValueProviders.Add(valueProvider);
 
-            var valueProvider = new DelimitedQueryStringValueProvider(
-                BindingSource.Query,
-                context.ActionContext.HttpContext.Request.Query,
-                CultureInfo.InvariantCulture,
-                this.delimiters);
-
-            context.ValueProviders.Add(valueProvider);
-
-            return Task.CompletedTask;
-        }
+        return Task.CompletedTask;
     }
 }

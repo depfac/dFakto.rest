@@ -1,15 +1,14 @@
 using System.Text.Json;
 using dFakto.Rest.Abstractions;
 
-namespace dFakto.Rest.System.Text.Json
+namespace dFakto.Rest.System.Text.Json;
+
+public class ResourceSerializerOptions
 {
-    public class ResourceSerializerOptions
+    public ResourceSerializerOptions()
     {
-        public ResourceSerializerOptions()
-        {
-            JsonSerializerOptions = new JsonSerializerOptions();
-        }
-        
-        public JsonSerializerOptions JsonSerializerOptions { get; set; }
+        JsonSerializerOptions = new JsonSerializerOptions();
     }
+        
+    public JsonSerializerOptions JsonSerializerOptions { get; set; }
 }
