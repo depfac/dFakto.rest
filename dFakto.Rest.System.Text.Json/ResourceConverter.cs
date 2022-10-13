@@ -16,7 +16,7 @@ internal class ResourceConverterFactory : JsonConverterFactory
     }
 
     public override JsonConverter CreateConverter(
-        Type type,
+        Type typeToConvert,
         JsonSerializerOptions options)
     {
         return new ResourceConverter();
@@ -62,7 +62,6 @@ internal class ResourceConverter : JsonConverter<IResource>
                         {
                             resource.AddLink(l.Key, l.Value);
                         }
-
                         break;
                     case Constants.Embedded:
                         var embedded = ReadObjectorArray(ref reader, options, Read);

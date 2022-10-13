@@ -35,13 +35,20 @@ internal class HypermediaApplicationLanguageExpandMiddleware
     private const string AnyMediaType = "*/*";
         
     private readonly RequestDelegate _next;
+    private readonly IResourceAccessor _resourceAccessor;
     private readonly HypermediaApplicationLanguageExpandMiddlewareOptions _middlewareOptions;
     private readonly IResourceSerializer _resourceSerializer;
     private readonly ILogger<HypermediaApplicationLanguageExpandMiddleware> _logger;
 
-    public HypermediaApplicationLanguageExpandMiddleware(RequestDelegate next, IOptions<HypermediaApplicationLanguageExpandMiddlewareOptions> middlewareOptions, IResourceFactory resourceFactory, ILogger<HypermediaApplicationLanguageExpandMiddleware> logger)
+    public HypermediaApplicationLanguageExpandMiddleware(
+        RequestDelegate next,
+        IOptions<HypermediaApplicationLanguageExpandMiddlewareOptions> middlewareOptions, 
+        IResourceFactory resourceFactory,
+        IResourceAccessor resourceAccessor,
+        ILogger<HypermediaApplicationLanguageExpandMiddleware> logger)
     {
         _next = next;
+        _resourceAccessor = resourceAccessor;
         _middlewareOptions = middlewareOptions.Value;
         _resourceSerializer = resourceFactory.CreateSerializer();
         _logger = logger;
@@ -117,14 +124,14 @@ internal class HypermediaApplicationLanguageExpandMiddleware
                         {
                             if (r.Links[linkName].SingleValued)
                             {
-                                r.AddEmbedded(linkName, await GetResourceAsync(r.Links[linkName].Value, context));
+                                r.AddEmbedded(linkName, await GetResourceAsync(r.Links[linkName].Value));
                             }
                             else
                             {
-                                List<IResource> resources = new List<IResource>();
+                                var resources = new List<IResource>();
                                 foreach (var link in r.Links[linkName].Values)
                                 {
-                                    resources.Add(await GetResourceAsync(link, context));
+                                    resources.Add(await GetResourceAsync(link));
                                 }
                                 r.AddEmbedded(linkName, resources);
                             }
@@ -135,7 +142,7 @@ internal class HypermediaApplicationLanguageExpandMiddleware
                 }
                 else if (resource.Links.Keys.Contains(linkName) && !resource.Embedded.Keys.Contains(linkName))
                 {
-                    resource.AddEmbedded(linkName, await GetResourceAsync(resource.Links[linkName].Value, context));
+                    resource.AddEmbedded(linkName, await GetResourceAsync(resource.Links[linkName].Value));
                     changed = true;
                 }
             }
@@ -152,9 +159,7 @@ internal class HypermediaApplicationLanguageExpandMiddleware
         }
     }
 
-    private async Task<IResource> GetResourceAsync(
-        Link link,
-        HttpContext context)
+    private async Task<IResource> GetResourceAsync(Link link)
     {
         if (!string.IsNullOrEmpty(link.Type) && !_middlewareOptions.SupportedMediaTypes.Contains(link.Type))
         {
@@ -166,6 +171,6 @@ internal class HypermediaApplicationLanguageExpandMiddleware
             return null;
         }
 
-        return await context.GetResource(link.Href);
+        return await _resourceAccessor.GetResource(link.Href);
     }
 }

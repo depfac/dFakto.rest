@@ -1,28 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using dFakto.Rest.Abstractions;
+using dFakto.Rest.AspNetCore.Mvc;
+using dFakto.Rest.SampleApi;
+using dFakto.Rest.SampleApi.ResourceFactories;
+using Microsoft.AspNetCore.HttpOverrides;
 
-namespace dFakto.Rest.SampleApi
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddControllers(x => 
+    // To support application/hal+json Content Type
+    x.AddHypermediaApplicationLanguageFormatters());
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(x => x.SchemaFilter<AddSchemaExamples>());
+builder.Services.AddHypermediaApplicationLanguage(x => { x.SupportedMediaTypes.Add("application/json"); });
+builder.Services.AddTransient<AuthorResourceFactory>();
+builder.Services.AddTransient<BookResourceFactory>();
+
+var app = builder.Build();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    public class Program
+    ForwardedHeaders = ForwardedHeaders.All,
+});
+app.Use(async (context, next) =>
+{
+    if (context.Request.Headers.TryGetValue("X-Forwarded-Prefix", out var prefix))
     {
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Build().Run();
-        }
+        context.Request.PathBase = prefix.Last();
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+        if (context.Request.Path.StartsWithSegments(context.Request.PathBase, out var path))
+        {
+            context.Request.Path = path;
+        }
     }
+
+    await next(context);
+});
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();

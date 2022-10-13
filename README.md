@@ -11,7 +11,7 @@ The project is composed of 3 components
 * dFakto.Rest.System.text.Json an implementation based on System.Text.Json
 * dFakto.Rest.AspNetCore.Mvc contains component to ease integration of dFakto.Rest into ASPNET Core projects.
 
-## Quick example to crete a Resource :
+## Quick example to create a Resource :
 
 ```c#
 
