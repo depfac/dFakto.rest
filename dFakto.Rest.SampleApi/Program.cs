@@ -3,6 +3,7 @@ using dFakto.Rest.AspNetCore.Mvc;
 using dFakto.Rest.SampleApi;
 using dFakto.Rest.SampleApi.ResourceFactories;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +14,7 @@ builder.Services.AddControllers(x =>
     x.AddHypermediaApplicationLanguageFormatters());
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(x => x.SchemaFilter<AddSchemaExamples>());
+builder.Services.AddSwaggerGen();
 builder.Services.AddHypermediaApplicationLanguage(x => { x.SupportedMediaTypes.Add("application/json"); });
 builder.Services.AddTransient<AuthorResourceFactory>();
 builder.Services.AddTransient<BookResourceFactory>();
@@ -49,6 +50,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseHeaderPropagation();
 
 app.MapControllers();
 

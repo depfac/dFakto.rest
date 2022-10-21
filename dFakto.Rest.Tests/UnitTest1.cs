@@ -64,7 +64,7 @@ namespace dFakto.Rest.Tests
              
              var r = _factory.Create(selfUri);
 
-             var l = r.Links["self"];
+             var l = r.GetLink("self");
              Assert.NotEmpty(l.Values);
              Assert.Equal(selfUri,l.Value.Href);
              Assert.Equal(selfUri, r.Self);
@@ -166,9 +166,9 @@ namespace dFakto.Rest.Tests
 
              var json = _factory.CreateSerializer().Serialize(r).Result;
 
-             Assert.Contains("sample", r.Links.Keys);
+             Assert.Contains("sample", r.GetLinks().Keys);
              
-             var links = r.Links["sample"];
+             var links = r.GetLinks()["sample"];
              
              Assert.Single(links.Values);
              Assert.Equal(l.Deprecation, links.Value.Deprecation);
@@ -202,15 +202,15 @@ namespace dFakto.Rest.Tests
              var r = _factory.Create(selfUri);
 
              Assert.Throws<ArgumentException>(() => r.AddLink(null, (Link) null));
-             Assert.Throws<ArgumentException>(() => r.AddEmbedded(null, _factory.Create(selfUri)));
-             Assert.Throws<ArgumentException>(() => r.AddEmbedded(null, (IEnumerable<IResource>) null));
-             Assert.Throws<ArgumentException>(() => r.AddEmbedded(string.Empty, _factory.Create(selfUri)));
+             Assert.Throws<ArgumentException>(() => r.AddEmbeddedResource(null, _factory.Create(selfUri)));
+             Assert.Throws<ArgumentException>(() => r.AddEmbeddedResource(null, (IEnumerable<IResource>) null));
+             Assert.Throws<ArgumentException>(() => r.AddEmbeddedResource(string.Empty, _factory.Create(selfUri)));
              
              Assert.Throws<ArgumentNullException>(() => r.AddLink("test", (IEnumerable<Link>) null));
              Assert.Throws<ArgumentNullException>(() => r.AddLink("test", (Link[]) null));
              
-             Assert.Throws<ArgumentNullException>(() => r.AddEmbedded("test", (IEnumerable<IResource>) null));
-             Assert.Throws<ArgumentNullException>(() => r.AddEmbedded("test", (IResource[]) null));
+             Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResource("test", (IEnumerable<IResource>) null));
+             Assert.Throws<ArgumentNullException>(() => r.AddEmbeddedResource("test", (IResource[]) null));
          }
 
          [Fact]
@@ -226,7 +226,7 @@ namespace dFakto.Rest.Tests
 
              r.AddLink("sample", new[] {l, l2});
              
-             var links = r.Links["sample"];
+             var links = r.GetLink("sample");
              
              Assert.Equal(2, links.Values.Count());
              Assert.Equal(l.Href,links.Values.First().Href);
@@ -235,13 +235,13 @@ namespace dFakto.Rest.Tests
              //Override previous links
              r.AddLink("sample", l3);
              
-             links = r.Links["sample"];
+             links = r.GetLink("sample");
              
              Assert.Single(links.Values);
              Assert.Equal(l3.Href,links.Value.Href);
              
              r.AddLink("sample", new []{ l, null, l2});
-             links = r.Links["sample"];
+             links = r.GetLink("sample");
              
              Assert.Equal(2, links.Values.Count());
              Assert.Equal(l.Href,links.Values.First().Href);
@@ -253,21 +253,21 @@ namespace dFakto.Rest.Tests
          {
              var selfUri = new Uri("http://embedded");
              var e = _factory.Create(selfUri);
-             Assert.Empty(e.Embedded.Keys);
+             Assert.Empty(e.GetEmbeddedResources().Keys);
              
              var r = _factory.Create(new Uri("http://root"))
-                 .AddEmbedded("test", e);
+                 .AddEmbeddedResource("test", e);
              
-             Assert.Contains("test",r.Embedded.Keys);
-             Assert.Single(r.Embedded);
-             Assert.Equal(selfUri,r.Embedded["test"].Value.Self);
+             Assert.Contains("test",r.GetEmbeddedResources().Keys);
+             Assert.Single(r.GetEmbeddedResources());
+             Assert.Equal(selfUri,r.GetEmbeddedResource("test").Value.Self);
 
-             r.AddEmbedded("test", new []{e,e});
+             r.AddEmbeddedResource("test", new []{e,e});
              
-             Assert.Contains("test",r.Embedded.Keys);
-             Assert.Single(r.Embedded);
+             Assert.Contains("test",r.GetEmbeddedResources().Keys);
+             Assert.Single(r.GetEmbeddedResources());
 
-             var emm = r.Embedded["test"];
+             var emm = r.GetEmbeddedResource("test");
              
              Assert.Equal(2,emm.Count);
              Assert.Equal(selfUri, emm.Values.First().Self);
@@ -314,9 +314,9 @@ namespace dFakto.Rest.Tests
                  .Add(new {testint=13})
                  .Add(GetModel())
                  .Add(new {testurl="http://dfdfdfdf"} )
-                 .AddEmbedded("same", embedde)
-                 .AddEmbedded("same", embedde)
-                 .AddEmbedded("same", embedde)
+                 .AddEmbeddedResource("same", embedde)
+                 .AddEmbeddedResource("same", embedde)
+                 .AddEmbeddedResource("same", embedde)
                  .AddLink("same", new Link(embedde.Self) {Name = "coucou"})
                  .AddLink("same", new Link(embedde.Self) {Name = "toto", Methods = new []{HttpMethod.Get, HttpMethod.Patch}});
 

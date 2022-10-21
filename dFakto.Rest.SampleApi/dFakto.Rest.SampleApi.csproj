@@ -14,4 +14,8 @@
       <ProjectReference Include="..\dFakto.Rest.AspNetCore.Mvc\dFakto.Rest.AspNetCore.Mvc.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="test.cs" />
+    </ItemGroup>
+
 </Project>

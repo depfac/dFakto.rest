@@ -1,26 +1,29 @@
 using System;
-using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using dFakto.Rest.Abstractions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace dFakto.Rest.AspNetCore.Mvc;
 
-
-
 internal class ResourceAccessor : IResourceAccessor
 {
-    private readonly HttpContext _context;
-    
-    public ResourceAccessor(IHttpContextAccessor httpContextAccessor)
+    public const string ResourceAccessorHttpClientName = "ResourceAccessor";
+
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IResourceFactory _resourceFactory;
+    private readonly IOptions<HypermediaApplicationLanguageExpandMiddlewareOptions> _options;
+
+    public ResourceAccessor(
+        IHttpClientFactory httpClientFactory,
+        IResourceFactory resourceFactory,
+        IOptions<HypermediaApplicationLanguageExpandMiddlewareOptions> options)
     {
-        _context = httpContextAccessor.HttpContext;
+        _httpClientFactory = httpClientFactory;
+        _resourceFactory = resourceFactory;
+        _options = options;
     }
 
     /// <summary>
@@ -36,37 +39,25 @@ internal class ResourceAccessor : IResourceAccessor
         Uri uri, 
         CancellationToken cancellationToken = new CancellationToken())
     {
-        var factory = _context.RequestServices.GetService<IResourceFactory>()
-                      ?? throw new ApplicationException("Unable to resolve IResourceFactory");
-        var options = _context.RequestServices.GetService<IOptions<HypermediaApplicationLanguageExpandMiddlewareOptions>>()
-                      ?? throw new ApplicationException("Unable to resolve HypermediaApplicationLanguageExpandMiddlewareOptions");
+        using (var client = _httpClientFactory.CreateClient(ResourceAccessorHttpClientName))
+        {
+            client.Timeout = TimeSpan.FromSeconds(_options.Value.RequestTimeout);
             
-        HttpClientHandler handler = new HttpClientHandler();
-        handler.CookieContainer = new CookieContainer();
-        foreach (var cookie in _context.Request.Cookies)
-        {
-            handler.CookieContainer.Add(new Cookie(cookie.Key, cookie.Value) {Domain = uri.Host});
-        }
-
-        using (HttpClient client = new HttpClient(handler))
-        {
-            client.Timeout = TimeSpan.FromSeconds(options.Value.RequestTimeout);
-                
-            HttpRequestMessage request = new HttpRequestMessage();
-            request.Method = HttpMethod.Get;
-            request.RequestUri = uri;
-            request.Headers.Accept.Clear();
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(Constants.HypertextApplicationLanguageMediaType));
-            if (_context.Request.Headers.TryGetValue("Authorization", out var auth))
+            using (var request = new HttpRequestMessage())
             {
-                request.Headers.TryAddWithoutValidation("Authorization", auth.First());
-            }
+                request.Method = HttpMethod.Get;
+                request.RequestUri = uri;
+                request.Headers.Accept.Clear();
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(Constants.HypertextApplicationLanguageMediaType));
 
-            HttpResponseMessage response = await client.SendAsync(request, cancellationToken);
-            response.EnsureSuccessStatusCode();
-            await using (var stream = await response.Content.ReadAsStreamAsync())
-            {
-                return await factory.CreateSerializer().Deserialize(stream);
+                using (var response = await client.SendAsync(request, cancellationToken))
+                {
+                    response.EnsureSuccessStatusCode();
+                    await using (var stream = await response.Content.ReadAsStreamAsync(cancellationToken))
+                    {
+                        return await _resourceFactory.CreateSerializer().Deserialize(stream);
+                    }
+                }
             }
         }
     }

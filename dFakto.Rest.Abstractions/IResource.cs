@@ -10,19 +10,18 @@ namespace dFakto.Rest.Abstractions;
 public interface IResource
 {
     /// <summary>
-    /// Return Self link if exists
+    /// Return Self link
     /// </summary>
-    Uri? Self => Links.ContainsKey(Constants.Self) ? Links[Constants.Self].Value.Href : null;
+    Uri Self { get; }
 
-    /// <summary>
-    /// Links of the Resource
-    /// </summary>
-    IReadOnlyDictionary<string, SingleOrList<Link>> Links { get; }
-        
-    /// <summary>
-    /// Embedded Resources
-    /// </summary>
-    IReadOnlyDictionary<string,  SingleOrList<IResource>> Embedded  { get; }
+    bool ContainsLink(string name);
+    bool ContainsEmbedded(string name);
+
+    IReadOnlyDictionary<string, ISingleOrList<Link>> GetLinks();
+    IReadOnlyDictionary<string, ISingleOrList<IResource>> GetEmbeddedResources();
+    
+    ISingleOrList<Link> GetLink(string name);
+    ISingleOrList<IResource> GetEmbeddedResource(string name);
 
     IResource AddLink(string name, Uri href);
         
@@ -48,7 +47,7 @@ public interface IResource
     /// <param name="name">Link relation type</param>
     /// <param name="embedded">One or more Resources</param>
     /// <returns>this</returns>
-    IResource AddEmbedded(string name, IResource embedded);
+    IResource AddEmbeddedResource(string name, IResource embedded);
         
     /// <summary>
     /// Add Embedded Resource to the resource
@@ -56,7 +55,7 @@ public interface IResource
     /// <param name="name">Link relation type</param>
     /// <param name="embedded">One or more Resources</param>
     /// <returns>this</returns>
-    IResource AddEmbedded(string name, IEnumerable<IResource> embedded);
+    IResource AddEmbeddedResource(string name, IEnumerable<IResource> embedded);
         
     /// <summary>
     /// Add Property values to the Resources

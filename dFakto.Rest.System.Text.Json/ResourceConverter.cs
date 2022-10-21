@@ -101,7 +101,7 @@ internal class ResourceConverter : JsonConverter<IResource>
 
         writer.WritePropertyName(Constants.Links);
         writer.WriteStartObject();
-        foreach ((string key, SingleOrList<Link> links) in value.Links)
+        foreach ((var key, var links) in value.GetLinks())
         {
             writer.WritePropertyName(GetJsonPropertyName(key, options));
             if (links.SingleValued)
@@ -120,11 +120,12 @@ internal class ResourceConverter : JsonConverter<IResource>
         }
         writer.WriteEndObject();
 
-        if (value.Embedded.Any())
+        var embedded = value.GetEmbeddedResources();
+        if (embedded.Any())
         {
             writer.WritePropertyName(Constants.Embedded);
             writer.WriteStartObject();
-            foreach ((string key, SingleOrList<IResource> resources) in value.Embedded)
+            foreach ((var key, var resources) in embedded)
             {
                 writer.WritePropertyName(GetJsonPropertyName(key, options));
                 if (resources.SingleValued)

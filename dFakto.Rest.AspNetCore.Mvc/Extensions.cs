@@ -48,6 +48,12 @@ public static class Extensions
         }
 
         services.AddHttpContextAccessor();
+        services.AddHttpClient(ResourceAccessor.ResourceAccessorHttpClientName)
+            .AddHeaderPropagation(x =>
+            {
+                x.Headers.Add(HttpRequestHeader.Authorization.ToString());
+                x.Headers.Add(HttpRequestHeader.Cookie.ToString());
+            });
         services.AddTransient<IResourceAccessor, ResourceAccessor>();
         services.AddTransient<ILinkResourceFactory, LinkResourceFactory>();
         services.AddTransient<LinkResourceFactory>();

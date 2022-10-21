@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+        <TargetFramework>net6.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageVersion>1.0.0-beta6</PackageVersion>
         <Copyright>© dFakto 2019-2020</Copyright>
@@ -26,6 +26,10 @@
     <ItemGroup>
       <ProjectReference Include="..\dFakto.Rest.Abstractions\dFakto.Rest.Abstractions.csproj" />
       <ProjectReference Include="..\dFakto.Rest.System.Text.Json\dFakto.Rest.System.Text.Json.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+      <PackageReference Include="Microsoft.AspNetCore.HeaderPropagation" Version="6.0.10" />
     </ItemGroup>
     
 </Project>

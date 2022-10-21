@@ -116,33 +116,34 @@ internal class HypermediaApplicationLanguageExpandMiddleware
                 if (linkName == Constants.Self)
                     continue;
 
-                if (!string.IsNullOrEmpty(embeddedName) && resource.Embedded.ContainsKey(embeddedName))
+                if (!string.IsNullOrEmpty(embeddedName) && resource.ContainsEmbedded(embeddedName))
                 {
-                    foreach (var r in resource.Embedded[embeddedName].Values)
+                    foreach (var r in resource.GetEmbeddedResource(embeddedName).Values)
                     {
-                        if (r.Links.ContainsKey(linkName) && !resource.Embedded.ContainsKey(linkName))
+                        if (r.ContainsLink(linkName) && !resource.ContainsEmbedded(linkName))
                         {
-                            if (r.Links[linkName].SingleValued)
+                            var l = r.GetLink(linkName);
+                            if (l.SingleValued)
                             {
-                                r.AddEmbedded(linkName, await GetResourceAsync(r.Links[linkName].Value));
+                                r.AddEmbeddedResource(linkName, await GetResourceAsync(l.Value));
                             }
                             else
                             {
                                 var resources = new List<IResource>();
-                                foreach (var link in r.Links[linkName].Values)
+                                foreach (var link in l.Values)
                                 {
                                     resources.Add(await GetResourceAsync(link));
                                 }
-                                r.AddEmbedded(linkName, resources);
+                                r.AddEmbeddedResource(linkName, resources);
                             }
                                 
                             changed = true;
                         }
                     }
                 }
-                else if (resource.Links.Keys.Contains(linkName) && !resource.Embedded.Keys.Contains(linkName))
+                else if (resource.ContainsLink(linkName) && !resource.ContainsEmbedded(linkName))
                 {
-                    resource.AddEmbedded(linkName, await GetResourceAsync(resource.Links[linkName].Value));
+                    resource.AddEmbeddedResource(linkName, await GetResourceAsync(resource.GetLink(linkName).Value));
                     changed = true;
                 }
             }

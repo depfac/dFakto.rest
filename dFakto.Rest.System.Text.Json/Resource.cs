@@ -14,8 +14,8 @@ internal class Resource : IResource
 {
 
     private static readonly byte[] EmptyJsonObject = Encoding.UTF8.GetBytes("{}");
-    private readonly Dictionary<string, SingleOrList<Link>> _links = new Dictionary<string, SingleOrList<Link>>();
-    private readonly Dictionary<string, SingleOrList<IResource>> _embedded = new Dictionary<string, SingleOrList<IResource>>();
+    private readonly Dictionary<string, ISingleOrList<Link>> _links = new Dictionary<string, ISingleOrList<Link>>();
+    private readonly Dictionary<string, ISingleOrList<IResource>> _embedded = new Dictionary<string, ISingleOrList<IResource>>();
     private readonly JsonSerializerOptions _serializerSettings;
 
     public Resource(JsonSerializerOptions serializerSettings)
@@ -23,11 +23,37 @@ internal class Resource : IResource
         _serializerSettings = serializerSettings;
     }
 
-    public IReadOnlyDictionary<string, SingleOrList<Link>> Links => _links
-        .ToDictionary(x => x.Key, x => x.Value);
+    public Uri Self => _links[Constants.Self].Value.Href;
+    public bool ContainsLink(string name)
+    {
+        return _links.ContainsKey(name);
+    }
 
-    public IReadOnlyDictionary<string, SingleOrList<IResource>> Embedded => _embedded
-        .ToDictionary(x => x.Key, x => x.Value);
+    public bool ContainsEmbedded(string name)
+    {
+        return _embedded.ContainsKey(name);
+    }
+
+    public IReadOnlyDictionary<string, ISingleOrList<Link>> GetLinks()
+    {
+        return _links;
+    }
+
+    public IReadOnlyDictionary<string, ISingleOrList<IResource>> GetEmbeddedResources()
+    {
+        return _embedded;
+    }
+
+    public ISingleOrList<Link> GetLink(string name)
+    {
+        return _links.ContainsKey(name) ? _links[name] : throw new Exception($"No Link named {name} found");
+    }
+
+    public ISingleOrList<IResource> GetEmbeddedResource(string name)
+    {
+        
+        return _embedded.ContainsKey(name) ? _embedded[name] : throw new Exception($"No Link named {name} found");
+    }
 
     public IResource AddLink(string name, Uri href)
     {
@@ -67,7 +93,7 @@ internal class Resource : IResource
 
         if (_links.ContainsKey(name))
         {
-            _links[name].AddRange(links);
+            ((SingleOrList<Link>) _links[name]).AddRange(links);
         }
         else
         {
@@ -77,7 +103,7 @@ internal class Resource : IResource
         return this;
     }
 
-    public IResource AddEmbedded(string name, IResource embedded)
+    public IResource AddEmbeddedResource(string name, IResource embedded)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException(nameof(name));
@@ -88,7 +114,7 @@ internal class Resource : IResource
 
     }
         
-    public IResource AddEmbedded(string name, IEnumerable<IResource> embedded)
+    public IResource AddEmbeddedResource(string name, IEnumerable<IResource> embedded)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException(nameof(name));
@@ -102,7 +128,7 @@ internal class Resource : IResource
 
         if (_embedded.ContainsKey(name))
         {
-            _embedded[name].AddRange(embedded);
+            ((SingleOrList<IResource>) _embedded[name]).AddRange(embedded);
         }
         else
         {
