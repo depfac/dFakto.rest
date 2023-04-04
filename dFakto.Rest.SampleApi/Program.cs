@@ -1,9 +1,7 @@
-using dFakto.Rest.Abstractions;
 using dFakto.Rest.AspNetCore.Mvc;
-using dFakto.Rest.SampleApi;
+using dFakto.Rest.SampleApi.Domain;
 using dFakto.Rest.SampleApi.ResourceFactories;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +16,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHypermediaApplicationLanguage(x => { x.SupportedMediaTypes.Add("application/json"); });
 builder.Services.AddTransient<AuthorResourceFactory>();
 builder.Services.AddTransient<BookResourceFactory>();
+builder.Services.AddTransient<LinksFactory>();
+builder.Services.AddTransient<AuthorsStore>();
+builder.Services.AddTransient<BooksStore>();
 
 var app = builder.Build();
 
@@ -52,6 +53,8 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.UseHeaderPropagation();
+
+app.UseHypermediaApplicationLanguageExpandMiddleware();
 
 app.MapControllers();
 
