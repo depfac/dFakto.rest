@@ -29,13 +29,13 @@ public class BookResourceFactory
         return res;
     }
     
-    public object? GetBooksResource(IReadOnlyList<Book> books)
+    public IResource GetBooksResource(IReadOnlyList<Book> books)
     {
         var r = _resourceFactory.Create(_linkResourceFactory.GetBooksUri());
         r.AddEmbeddedResource("books", books.Select(GetBookResource));
         return r;
     }
-    public object? GetBooksResource(IReadOnlyList<Book> books, string authorName)
+    public IResource GetBooksResource(IReadOnlyList<Book> books, string authorName)
     {
         var r = _resourceFactory.Create(_linkResourceFactory.GetAuthorBooksUri(authorName));
         r.AddEmbeddedResource("books", books.Select(GetBookResource));
