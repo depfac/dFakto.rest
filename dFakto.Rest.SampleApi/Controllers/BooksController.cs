@@ -33,6 +33,8 @@ public class BooksController : Controller
     public ActionResult<IResource> GetAuthor(string isbn)
     {
         var book = _booksStore.GetByIsbn(isbn);
+        if (book == null)
+            return NotFound();
         return Ok(_bookResourceFactory.GetBookResource(book));
     }
     
@@ -41,6 +43,6 @@ public class BooksController : Controller
     public ActionResult<IResource> GetAuthorBooks(string name)
     {
         var books = _booksStore.GetByAuthor(name);
-        return Ok(_bookResourceFactory.GetBooksResource(books));
+        return Ok(_bookResourceFactory.GetBooksResource(books,name));
     }
 }

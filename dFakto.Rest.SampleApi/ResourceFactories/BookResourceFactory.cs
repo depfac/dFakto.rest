@@ -35,4 +35,10 @@ public class BookResourceFactory
         r.AddEmbeddedResource("books", books.Select(GetBookResource));
         return r;
     }
+    public object? GetBooksResource(IReadOnlyList<Book> books, string authorName)
+    {
+        var r = _resourceFactory.Create(_linkResourceFactory.GetAuthorBooksUri(authorName));
+        r.AddEmbeddedResource("books", books.Select(GetBookResource));
+        return r;
+    }
 }
