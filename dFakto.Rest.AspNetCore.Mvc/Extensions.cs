@@ -55,8 +55,8 @@ public static class Extensions
                 x.Headers.Add(HttpRequestHeader.Cookie.ToString());
             });
         services.AddTransient<IResourceAccessor, ResourceAccessor>();
-        services.AddTransient<ILinkResourceFactory, LinkResourceFactory>();
-        services.AddTransient<LinkResourceFactory>();
+        services.AddTransient<IResourceUriFactory, ResourceUriFactory>();
+        services.AddTransient<ResourceUriFactory>();
         services.AddSingleton<IResourceFactory>(x =>
             {
                 var cfg = x.GetService<IOptions<JsonOptions>>() ??

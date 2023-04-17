@@ -27,7 +27,7 @@ public class AuthorsController : Controller
     }
     
     [HttpGet]
-    [Route("", Name = LinksFactory.GetAuthors)]
+    [Route("", Name = ResourceUriFactory.GetAuthors)]
     public ActionResult<IResource> GetAuthors()
     {
         var authors = _authorsStore.GetAll();
@@ -35,7 +35,7 @@ public class AuthorsController : Controller
     }
     
     [HttpGet]
-    [Route("{name}", Name = LinksFactory.GetAuthorName)]
+    [Route("{name}", Name = ResourceUriFactory.GetAuthorName)]
     public ActionResult<IResource> GetAuthor(string name, [FromQuery] string[] expand)
     {
         var author = _authorsStore.GetByName(name);

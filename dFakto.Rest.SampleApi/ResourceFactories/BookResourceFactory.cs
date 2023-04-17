@@ -1,5 +1,4 @@
 using dFakto.Rest.Abstractions;
-using dFakto.Rest.AspNetCore.Mvc;
 using dFakto.Rest.SampleApi.Domain;
 
 namespace dFakto.Rest.SampleApi.ResourceFactories;
@@ -7,18 +6,18 @@ namespace dFakto.Rest.SampleApi.ResourceFactories;
 public class BookResourceFactory
 {
     private readonly IResourceFactory _resourceFactory;
-    private readonly LinksFactory _linkResourceFactory;
+    private readonly ResourceUriFactory _resourceUriFactory;
 
-    public BookResourceFactory(IResourceFactory resourceFactory, LinksFactory linkResourceFactory)
+    public BookResourceFactory(IResourceFactory resourceFactory, ResourceUriFactory resourceUriFactory)
     {
         _resourceFactory = resourceFactory;
-        _linkResourceFactory = linkResourceFactory;
+        _resourceUriFactory = resourceUriFactory;
     }
     
     public IResource GetBookResource(Book book)
     {
-        var res = _resourceFactory.Create(_linkResourceFactory.GetBookUri(book.Isbn));
-        res.AddLink("author", _linkResourceFactory.GetAuthorByNameUri(book.AuthorName));
+        var res = _resourceFactory.Create(_resourceUriFactory.GetBookUri(book.Isbn));
+        res.AddLink("author", _resourceUriFactory.GetAuthorByNameUri(book.AuthorName));
         res.Add(new
         {
             book.Title,
@@ -31,13 +30,13 @@ public class BookResourceFactory
     
     public IResource GetBooksResource(IReadOnlyList<Book> books)
     {
-        var r = _resourceFactory.Create(_linkResourceFactory.GetBooksUri());
+        var r = _resourceFactory.Create(_resourceUriFactory.GetBooksUri());
         r.AddEmbeddedResource("books", books.Select(GetBookResource));
         return r;
     }
     public IResource GetBooksResource(IReadOnlyList<Book> books, string authorName)
     {
-        var r = _resourceFactory.Create(_linkResourceFactory.GetAuthorBooksUri(authorName));
+        var r = _resourceFactory.Create(_resourceUriFactory.GetAuthorBooksUri(authorName));
         r.AddEmbeddedResource("books", books.Select(GetBookResource));
         return r;
     }

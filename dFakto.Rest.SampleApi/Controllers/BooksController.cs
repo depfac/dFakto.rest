@@ -21,7 +21,7 @@ public class BooksController : Controller
     }
     
     [HttpGet]
-    [Route("books", Name = LinksFactory.GetBooks)]
+    [Route("books", Name = ResourceUriFactory.GetBooks)]
     public ActionResult<IResource> GetAuthors()
     {
         var books = _booksStore.GetAll();
@@ -29,7 +29,7 @@ public class BooksController : Controller
     }
     
     [HttpGet]
-    [Route("books/{isbn}", Name = LinksFactory.GetBook)]
+    [Route("books/{isbn}", Name = ResourceUriFactory.GetBook)]
     public ActionResult<IResource> GetAuthor(string isbn)
     {
         var book = _booksStore.GetByIsbn(isbn);
@@ -39,7 +39,7 @@ public class BooksController : Controller
     }
     
     [HttpGet]
-    [Route("authors/{name}/books", Name = LinksFactory.GetAuthorBooks)]
+    [Route("authors/{name}/books", Name = ResourceUriFactory.GetAuthorBooks)]
     public ActionResult<IResource> GetAuthorBooks(string name)
     {
         var books = _booksStore.GetByAuthor(name);

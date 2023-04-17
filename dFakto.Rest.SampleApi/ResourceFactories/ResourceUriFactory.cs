@@ -2,7 +2,7 @@ using dFakto.Rest.AspNetCore.Mvc;
 
 namespace dFakto.Rest.SampleApi.ResourceFactories;
 
-public class LinksFactory
+public class ResourceUriFactory
 {   
     public const string GetAuthorBooks = "GetAuthorBooks";
     public const string GetAuthors = "GetAuthors";
@@ -10,36 +10,36 @@ public class LinksFactory
     public const string GetBook = "GetBook";
     public const string GetAuthorName = "GetAuthorByName";
     
-    private readonly ILinkResourceFactory _linkResourceFactory;
+    private readonly IResourceUriFactory _resourceUriFactory;
 
-    public LinksFactory(ILinkResourceFactory linkResourceFactory)
+    public ResourceUriFactory(IResourceUriFactory resourceUriFactory)
     {
-        _linkResourceFactory = linkResourceFactory;
+        _resourceUriFactory = resourceUriFactory;
     }
 
     public Uri GetAuthorsUri()
     {
-        return _linkResourceFactory.GetUriByName(GetAuthors);
+        return _resourceUriFactory.GetUriByName(GetAuthors);
     }
     
     
     public Uri GetBooksUri()
     {
-        return _linkResourceFactory.GetUriByName(GetBooks);
+        return _resourceUriFactory.GetUriByName(GetBooks);
     }
     
     public Uri GetAuthorByNameUri(string authorName)
     {
-        return _linkResourceFactory.GetUriByName(GetAuthorName, new {Name = authorName});
+        return _resourceUriFactory.GetUriByName(GetAuthorName, new {Name = authorName});
     }
     
     public Uri GetAuthorBooksUri(string authorName)
     {
-        return _linkResourceFactory.GetUriByName(GetAuthorBooks, new {Name = authorName});
+        return _resourceUriFactory.GetUriByName(GetAuthorBooks, new {Name = authorName});
     }
 
     public Uri GetBookUri(string bookIsbn)
     {
-        return _linkResourceFactory.GetUriByName(GetBook, new {Isbn = bookIsbn});
+        return _resourceUriFactory.GetUriByName(GetBook, new {Isbn = bookIsbn});
     }
 }

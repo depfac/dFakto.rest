@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Routing;
 
 namespace dFakto.Rest.AspNetCore.Mvc;
 
-internal class LinkResourceFactory : ILinkResourceFactory
+internal class ResourceUriFactory : IResourceUriFactory
 {
     private readonly LinkGenerator _linkGenerator;
     private readonly HttpContext _httpContext;
 
-    public LinkResourceFactory(LinkGenerator linkGenerator, IHttpContextAccessor accessor)
+    public ResourceUriFactory(LinkGenerator linkGenerator, IHttpContextAccessor accessor)
     {
         _linkGenerator = linkGenerator;
         _httpContext = accessor.HttpContext ?? throw new Exception("HttpContextAccessor not accessible in DI");

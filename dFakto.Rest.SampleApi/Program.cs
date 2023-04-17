@@ -16,7 +16,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHypermediaApplicationLanguage(x => { x.SupportedMediaTypes.Add("application/json"); });
 builder.Services.AddTransient<AuthorResourceFactory>();
 builder.Services.AddTransient<BookResourceFactory>();
-builder.Services.AddTransient<LinksFactory>();
+builder.Services.AddTransient<ResourceUriFactory>();
 builder.Services.AddTransient<AuthorsStore>();
 builder.Services.AddTransient<BooksStore>();
 
