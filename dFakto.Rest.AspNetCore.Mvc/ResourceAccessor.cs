@@ -30,12 +30,10 @@ internal class ResourceAccessor : IResourceAccessor
     /// Retrieve a Resource at the given Uri.
     /// The current Cookies and Authentication Header will be transferred to the request 
     /// </summary>
-    /// <param name="context">HttpContext</param>
     /// <param name="uri">Uri of the resource to retrieve</param>
-    /// <param name="requestTimeout"></param>
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <returns>The Stream with the resource</returns>
-    public async Task<IResource> GetResource(
+    public async Task<IResource?> GetResource(
         Uri uri, 
         CancellationToken cancellationToken = new CancellationToken())
     {
@@ -52,7 +50,9 @@ internal class ResourceAccessor : IResourceAccessor
 
                 using (var response = await client.SendAsync(request, cancellationToken))
                 {
-                    response.EnsureSuccessStatusCode();
+                    if (!response.IsSuccessStatusCode)
+                        return null;
+
                     await using (var stream = await response.Content.ReadAsStreamAsync(cancellationToken))
                     {
                         return await _resourceFactory.CreateSerializer().Deserialize(stream);

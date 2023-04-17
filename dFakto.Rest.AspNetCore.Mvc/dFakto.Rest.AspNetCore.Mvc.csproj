@@ -12,6 +12,7 @@
         <RepositoryType>git</RepositoryType>
         <Title>dFakto.Rest.AspNetCore.Mvc</Title>
         <LangVersion>latestmajor</LangVersion>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>

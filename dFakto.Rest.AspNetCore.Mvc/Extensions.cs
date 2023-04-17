@@ -40,7 +40,7 @@ public static class Extensions
     /// <returns></returns>
     public static IServiceCollection AddHypermediaApplicationLanguage(
         this IServiceCollection services,
-        Action<HypermediaApplicationLanguageExpandMiddlewareOptions> optionAction = null)
+        Action<HypermediaApplicationLanguageExpandMiddlewareOptions>? optionAction = null)
     {
         if (optionAction != null)
         {

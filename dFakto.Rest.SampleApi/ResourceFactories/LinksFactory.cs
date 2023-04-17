@@ -25,7 +25,7 @@ public class LinksFactory
     
     public Uri GetBooksUri()
     {
-        return _linkResourceFactory.GetUriByName(GetAuthors);
+        return _linkResourceFactory.GetUriByName(GetBooks);
     }
     
     public Uri GetAuthorByNameUri(string authorName)

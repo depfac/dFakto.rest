@@ -17,7 +17,7 @@ public class ResourceOutputFormatter : TextOutputFormatter
         SupportedEncodings.Add(Encoding.UTF8);
     }
 
-    protected override bool CanWriteType(Type type)
+    protected override bool CanWriteType(Type? type)
     {
         return typeof(IResource).IsAssignableFrom(type);
     }
@@ -30,9 +30,12 @@ public class ResourceOutputFormatter : TextOutputFormatter
             
         var jsonConverter = resourceFactory.CreateSerializer();
 
-        await context.HttpContext.Response.WriteAsync(
-            await jsonConverter.Serialize((IResource) context.Object),
-            selectedEncoding);
+        if (context.Object != null)
+        {
+            await context.HttpContext.Response.WriteAsync(
+                await jsonConverter.Serialize((IResource) context.Object),
+                selectedEncoding);
+        }
     }
 }
 public class ResourceInputFormatter : TextInputFormatter

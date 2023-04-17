@@ -16,7 +16,7 @@ public interface IResourceAccessor
     /// <param name="requestTimeout"></param>
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <returns>The Stream with the resource</returns>
-    Task<IResource> GetResource(
+    Task<IResource?> GetResource(
         Uri uri, 
         CancellationToken cancellationToken = new CancellationToken());
 }
