@@ -46,13 +46,13 @@ internal class Resource : IResource
 
     public ISingleOrList<Link> GetLink(string name)
     {
-        return _links.ContainsKey(name) ? _links[name] : throw new Exception($"No Link named {name} found");
+        return _links.TryGetValue(name, out var link) ? link : throw new Exception($"No Link named {name} found");
     }
 
     public ISingleOrList<IResource> GetEmbeddedResource(string name)
     {
         
-        return _embedded.ContainsKey(name) ? _embedded[name] : throw new Exception($"No Link named {name} found");
+        return _embedded.TryGetValue(name, out var value) ? value : throw new Exception($"No Link named {name} found");
     }
 
     public IResource AddLink(string name, Uri href)
@@ -91,9 +91,9 @@ internal class Resource : IResource
             _links.Remove(name);
         }
 
-        if (_links.ContainsKey(name))
+        if (_links.TryGetValue(name, out var link))
         {
-            ((SingleOrList<Link>) _links[name]).AddRange(links);
+            ((SingleOrList<Link>) link).AddRange(links);
         }
         else
         {
@@ -126,9 +126,9 @@ internal class Resource : IResource
             _embedded.Remove(name);
         }
 
-        if (_embedded.ContainsKey(name))
+        if (_embedded.TryGetValue(name, out var value))
         {
-            ((SingleOrList<IResource>) _embedded[name]).AddRange(embedded);
+            ((SingleOrList<IResource>) value).AddRange(embedded);
         }
         else
         {
@@ -183,16 +183,16 @@ internal class Resource : IResource
     {
         var outputBuffer = new ArrayBufferWriter<byte>();
 
-        using (JsonDocument currentDocument = JsonDocument.Parse(JsonObjectValues))
+        using (var currentDocument = JsonDocument.Parse(JsonObjectValues))
         using (var jsonWriter = new Utf8JsonWriter(outputBuffer))
         {
-            JsonElement root1 = currentDocument.RootElement;
-            JsonElement root2 = newDocument.RootElement;
+            var root1 = currentDocument.RootElement;
+            var root2 = newDocument.RootElement;
 
             jsonWriter.WriteStartObject();
 
             // Write all the properties of the first document that don't conflict with the second
-            foreach (JsonProperty property in root1.EnumerateObject())
+            foreach (var property in root1.EnumerateObject())
             {
                 EnsurePropertyNameIsNotReserved(property);
 
@@ -204,7 +204,7 @@ internal class Resource : IResource
 
             // Write all the properties of the second document (including those that are duplicates which were skipped earlier)
             // The property values of the second document completely override the values of the first
-            foreach (JsonProperty property in root2.EnumerateObject())
+            foreach (var property in root2.EnumerateObject())
             {
                 EnsurePropertyNameIsNotReserved(property);
                     

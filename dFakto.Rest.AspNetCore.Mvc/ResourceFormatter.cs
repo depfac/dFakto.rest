@@ -43,7 +43,7 @@ public class ResourceInputFormatter : TextInputFormatter
         SupportedEncodings.Add(Encoding.UTF8);
     }
         
-    public override async Task<InputFormatterResult> ReadRequestBodyAsync(InputFormatterContext context, Encoding effectiveEncoding)
+    public override async Task<InputFormatterResult> ReadRequestBodyAsync(InputFormatterContext context, Encoding encoding)
     {
         var resourceFactory = context.HttpContext.RequestServices.GetService<IResourceFactory>();
         if (resourceFactory == null)

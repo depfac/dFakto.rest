@@ -40,7 +40,7 @@ internal class ResourceConverter : JsonConverter<IResource>
             throw new JsonException();
         }
 
-        Resource resource = new Resource(options);
+        var resource = new Resource(options);
             
         // Used to compute the resource properties
         var outputBuffer = new ArrayBufferWriter<byte>();
@@ -52,7 +52,7 @@ internal class ResourceConverter : JsonConverter<IResource>
                 if (reader.TokenType == JsonTokenType.EndObject)
                     break;
 
-                string propertyName = ReadPropertyName(ref reader);
+                var propertyName = ReadPropertyName(ref reader);
 
                 switch (propertyName)
                 {
@@ -101,7 +101,7 @@ internal class ResourceConverter : JsonConverter<IResource>
 
         writer.WritePropertyName(Constants.Links);
         writer.WriteStartObject();
-        foreach ((var key, var links) in value.GetLinks())
+        foreach (var (key, links) in value.GetLinks())
         {
             writer.WritePropertyName(GetJsonPropertyName(key, options));
             if (links.SingleValued)
@@ -125,7 +125,7 @@ internal class ResourceConverter : JsonConverter<IResource>
         {
             writer.WritePropertyName(Constants.Embedded);
             writer.WriteStartObject();
-            foreach ((var key, var resources) in embedded)
+            foreach (var (key, resources) in embedded)
             {
                 writer.WritePropertyName(GetJsonPropertyName(key, options));
                 if (resources.SingleValued)
