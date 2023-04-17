@@ -72,84 +72,39 @@ internal class HypermediaApplicationLanguageExpandMiddleware
             _logger.LogDebug("Expand parameter detected");
             var origin = context.Response.Body;
 
-            await using (var tmpBody = new MemoryStream())
+            await using var tmpBody = new MemoryStream();
+            
+            //Replace Body and call next middleware
+            context.Response.Body = tmpBody;
+            await _next(context);
+            context.Response.Body = origin;
+                    
+            //Reset Temp Stream
+            tmpBody.Seek(0, SeekOrigin.Begin);
+                    
+            if (_middlewareOptions.SupportedMediaTypes.Contains(MediaTypeHeaderValue.Parse(context.Response.ContentType).MediaType.Value))
             {
-                //Replace Body and call next middleware
-                context.Response.Body = tmpBody;
-                await _next(context);
-                context.Response.Body = origin;
-                    
-                //Reset Temp Stream
-                tmpBody.Seek(0, SeekOrigin.Begin);
-                    
-                if (_middlewareOptions.SupportedMediaTypes.Contains(MediaTypeHeaderValue.Parse(context.Response.ContentType).MediaType.Value))
-                {
-                    await AutoExpandResource(tmpBody, context, expands);
-                }
-                else
-                {
-                    await tmpBody.CopyToAsync(context.Response.Body);
-                }
+                await AutoExpandResource(tmpBody, context, expands);
+            }
+            else
+            {
+                await tmpBody.CopyToAsync(context.Response.Body);
             }
         }
     }
 
     private static string[] GetMediaTypes(string headerValue) =>
-        headerValue?.Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => MediaTypeWithQualityHeaderValue.Parse(x).MediaType).ToArray();
+        headerValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                   .Select(x => MediaTypeWithQualityHeaderValue.Parse(x).MediaType)
+                   .Where(x => x != null)
+                   .ToArray()!;
 
     private async Task AutoExpandResource(Stream inputStream, HttpContext context, string[] expands)
     {
         _logger.LogDebug("Loading Resource Response");
         var resource = await _resourceSerializer.Deserialize(inputStream) ?? throw new InvalidOperationException("Unable to deserialize Resource");
 
-        bool changed = false;
-
-        foreach (var expand in expands)
-        {
-            foreach (var expandName in expand.Split(',', StringSplitOptions.RemoveEmptyEntries))
-            {
-                var tokens = expandName.Split('.', StringSplitOptions.RemoveEmptyEntries);
-                var linkName = tokens.Length > 1 ? tokens[1] : tokens[0];
-                var embeddedName = tokens.Length > 1 ? tokens[0] : null;
-
-                if (linkName == Constants.Self)
-                    continue;
-
-                if (!string.IsNullOrEmpty(embeddedName) && resource.ContainsEmbedded(embeddedName))
-                {
-                    foreach (var r in resource.GetEmbeddedResource(embeddedName).Values)
-                    {
-                        if (r.ContainsLink(linkName) && !resource.ContainsEmbedded(linkName))
-                        {
-                            var l = r.GetLink(linkName);
-                            if (l.SingleValued)
-                            {
-                                r.AddEmbeddedResource(linkName, await GetResourceAsync(l.Value));
-                            }
-                            else
-                            {
-                                var resources = new List<IResource>();
-                                foreach (var link in l.Values)
-                                {
-                                    resources.Add(await GetResourceAsync(link));
-                                }
-                                r.AddEmbeddedResource(linkName, resources);
-                            }
-                                
-                            changed = true;
-                        }
-                    }
-                }
-                else if (resource.ContainsLink(linkName) && !resource.ContainsEmbedded(linkName))
-                {
-                    resource.AddEmbeddedResource(linkName, await GetResourceAsync(resource.GetLink(linkName).Value));
-                    changed = true;
-                }
-            }
-        }
-            
-        if (changed)
+        if (await AutoExpandResource(resource, expands))
         {
             await _resourceSerializer.Serialize(context.Response.Body, resource);
         }
@@ -160,7 +115,89 @@ internal class HypermediaApplicationLanguageExpandMiddleware
         }
     }
 
-    private async Task<IResource> GetResourceAsync(Link link)
+    private async Task<bool> AutoExpandResource(IResource resource, string[] expands)
+    {
+        var changed = false;
+        foreach (var expand in expands)
+        {
+            changed = await AutoExpandResource(resource, expand);
+        }
+
+        return changed;
+    }
+
+    private async Task<bool> AutoExpandResource(IResource resource, string expand)
+    {
+        var changed = false;
+        foreach (var expandName in expand.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var tokens = expandName.Split('.', StringSplitOptions.RemoveEmptyEntries);
+            var linkName = tokens.Length > 1 ? tokens[1] : tokens[0];
+            var embeddedName = tokens.Length > 1 ? tokens[0] : null;
+
+            if (linkName == Constants.Self)
+                continue;
+
+            if (!string.IsNullOrEmpty(embeddedName) && resource.ContainsEmbedded(embeddedName))
+            {
+                changed = await AutoExpandEmbeddedResource(resource, embeddedName, linkName);
+            }
+            else if (resource.ContainsLink(linkName) && !resource.ContainsEmbedded(linkName))
+            {
+                changed = await AutoExpandLink(resource, linkName);
+            }
+        }
+
+        return changed;
+    }
+
+    private async Task<bool> AutoExpandLink(IResource resource, string linkName)
+    {
+        var changed = false;
+        var l = resource.GetLink(linkName);
+        if (l.SingleValued)
+        {
+            var embedded = await GetResourceAsync(l.Value);
+            if (embedded != null)
+            {
+                resource.AddEmbeddedResource(linkName, embedded);
+                changed = true;
+            }
+        }
+        else
+        {
+            var resources = new List<IResource>();
+            foreach (var link in l.Values)
+            {
+                var embedded = await GetResourceAsync(link);
+                if (embedded != null)
+                {
+                    resources.Add(embedded);
+                    changed = true;
+                }
+            }
+
+            resource.AddEmbeddedResource(linkName, resources);
+        }
+
+        return changed;
+    }
+
+    private async Task<bool> AutoExpandEmbeddedResource(IResource resource, string embeddedName, string linkName)
+    {
+        var changed = false;
+        foreach (var r in resource.GetEmbeddedResource(embeddedName).Values)
+        {
+            if (r.ContainsLink(linkName) && !resource.ContainsEmbedded(linkName))
+            {
+                changed = await AutoExpandLink(r, linkName);
+            }
+        }
+
+        return changed;
+    }
+
+    private async Task<IResource?> GetResourceAsync(Link link)
     {
         if (!string.IsNullOrEmpty(link.Type) && !_middlewareOptions.SupportedMediaTypes.Contains(link.Type))
         {
