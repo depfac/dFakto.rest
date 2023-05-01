@@ -55,30 +55,25 @@ internal class Resource : IResource
         return _embedded.TryGetValue(name, out var value) ? value : throw new Exception($"No Link named {name} found");
     }
 
-    public IResource AddLink(string name, Uri href)
+    public IResource AddLink(string name, Uri? href)
     {
-        return AddLink(name, new Link(href));
+        return href != null
+            ? AddLink(name, new Link(href))
+            : this;
     }
+    
+    public IResource AddLink(string name, Link? link)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException(nameof(name));
         
-    public IResource AddLink(string name, Link link)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException(nameof(name));
-        if (link == null)
-            throw new ArgumentNullException(nameof(link));
-
-        return AddLink(name, new SingleOrList<Link>(link));
-    }
-
-    internal IResource AddLink(string name, SingleOrList<Link> link)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException(nameof(name));
-
-        _links[name] = link ?? throw new ArgumentNullException(nameof(link));
+        if (link != null)
+        {
+            AddLink(name, new SingleOrList<Link>(link));
+        }
         return this;
     }
-        
+    
     public IResource AddLink(string name, IEnumerable<Link> links)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -137,15 +132,6 @@ internal class Resource : IResource
             
         return this;
     }
-        
-    internal IResource AddEmbedded(string name, SingleOrList<IResource> embedded)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException(nameof(name));
-
-        _embedded[name] = embedded ?? throw new ArgumentNullException(nameof(embedded));
-        return this;
-    }
 
     public IResource Add<T>(T? values, Func<T,object>? onlyFields = null) where T : class
     {
@@ -175,6 +161,23 @@ internal class Resource : IResource
     public T? Bind<T>(T type)
     {
         return As<T>();
+    }
+    
+    internal IResource AddLink(string name, SingleOrList<Link> link)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException(nameof(name));
+
+        _links[name] = link ?? throw new ArgumentNullException(nameof(link));
+        return this;
+    }
+    internal IResource AddEmbedded(string name, SingleOrList<IResource> embedded)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException(nameof(name));
+
+        _embedded[name] = embedded ?? throw new ArgumentNullException(nameof(embedded));
+        return this;
     }
 
     internal byte[] JsonObjectValues { get; private set; } = EmptyJsonObject;
