@@ -23,15 +23,23 @@ public interface IResource
     ISingleOrList<Link> GetLink(string name);
     ISingleOrList<IResource> GetEmbeddedResource(string name);
 
-    IResource AddLink(string name, Uri href);
+    /// <summary>
+    /// Add Link to the resource.
+    /// <remarks>if the href is null it will not be inserted</remarks>
+    /// </summary>
+    /// <param name="name">Link relation type</param>
+    /// <param name="href">Href of the Link</param>
+    /// <returns>this</returns>
+    IResource AddLink(string name, Uri? href);
         
     /// <summary>
-    /// Add Link to the resource
+    /// Add Link to the resource.
+    /// <remarks>if the link is null it will not be inserted</remarks>
     /// </summary>
     /// <param name="name">Link relation type</param>
     /// <param name="link">One Link</param>
     /// <returns>this</returns>
-    IResource AddLink(string name, Link link);
+    IResource AddLink(string name, Link? link);
         
     /// <summary>
     /// Add Link to the resource
@@ -47,7 +55,7 @@ public interface IResource
     /// <param name="name">Link relation type</param>
     /// <param name="embedded">One or more Resources</param>
     /// <returns>this</returns>
-    IResource AddEmbeddedResource(string name, IResource embedded);
+    IResource AddEmbeddedResource(string name, IResource? embedded);
         
     /// <summary>
     /// Add Embedded Resource to the resource

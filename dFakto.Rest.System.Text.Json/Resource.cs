@@ -98,14 +98,14 @@ internal class Resource : IResource
         return this;
     }
 
-    public IResource AddEmbeddedResource(string name, IResource embedded)
+    public IResource AddEmbeddedResource(string name, IResource? embedded)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException(nameof(name));
-        if (embedded == null)
-            throw new ArgumentNullException(nameof(embedded));
 
-        return AddEmbedded(name, new SingleOrList<IResource>(embedded));
+        return embedded != null
+            ? AddEmbedded(name, new SingleOrList<IResource>(embedded))
+            : this;
 
     }
         
