@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageVersion>1.0.0-rc2</PackageVersion>
+        <PackageVersion>1.0.0-rc3</PackageVersion>
         <Copyright>© dFakto 2019-2023</Copyright>
         <PackageProjectUrl>https://github.com/depfac/dfakto.rest</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
