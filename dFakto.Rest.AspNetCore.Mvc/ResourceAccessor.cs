@@ -32,7 +32,7 @@ internal class ResourceAccessor : IResourceAccessor
     /// </summary>
     /// <param name="uri">Uri of the resource to retrieve</param>
     /// <param name="cancellationToken">Cancellation Token</param>
-    /// <returns>The Stream with the resource</returns>
+    /// <returns>The resource</returns>
     public async Task<IResource?> GetResource(
         Uri uri, 
         CancellationToken cancellationToken = new CancellationToken())
@@ -45,8 +45,6 @@ internal class ResourceAccessor : IResourceAccessor
             {
                 request.Method = HttpMethod.Get;
                 request.RequestUri = uri;
-                request.Headers.Accept.Clear();
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(Constants.HypertextApplicationLanguageMediaType));
 
                 using (var response = await client.SendAsync(request, cancellationToken))
                 {

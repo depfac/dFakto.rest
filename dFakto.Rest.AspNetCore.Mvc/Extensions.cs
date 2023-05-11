@@ -48,12 +48,19 @@ public static class Extensions
         }
 
         services.AddHttpContextAccessor();
-        services.AddHttpClient(ResourceAccessor.ResourceAccessorHttpClientName)
-            .AddHeaderPropagation(x =>
-            {
-                x.Headers.Add(HttpRequestHeader.Authorization.ToString());
-                x.Headers.Add(HttpRequestHeader.Cookie.ToString());
-            });
+        
+        services.AddHeaderPropagation(x =>
+        {
+            x.Headers.Add(HttpRequestHeader.Authorization.ToString());
+            x.Headers.Add(HttpRequestHeader.Cookie.ToString());
+        });
+        
+        services.AddHttpClient(ResourceAccessor.ResourceAccessorHttpClientName, x =>
+                {
+                    x.DefaultRequestHeaders.Accept.Clear();
+                    x.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(Constants.HypertextApplicationLanguageMediaType));
+                }).AddHeaderPropagation();
+        
         services.AddTransient<IResourceAccessor, ResourceAccessor>();
         services.AddTransient<IResourceUriFactory, ResourceUriFactory>();
         services.AddTransient<ResourceUriFactory>();
@@ -74,6 +81,7 @@ public static class Extensions
 
     public static IApplicationBuilder UseHypermediaApplicationLanguageExpandMiddleware(this IApplicationBuilder applicationBuilder)
     {
+        applicationBuilder.UseHeaderPropagation();
         return applicationBuilder.UseMiddleware<HypermediaApplicationLanguageExpandMiddleware>();
     }
 }
