@@ -19,6 +19,13 @@ public class ResourceFactory : IResourceFactory
         r.AddLink(Constants.Self, new Link(self));
         return r;
     }
+    
+    public IResource Create(Link self)
+    {
+        var r = new Resource(_jsonSerializerOptions.JsonSerializerOptions);
+        r.AddLink(Constants.Self, self);
+        return r;
+    }
 
     public IResourceSerializer CreateSerializer()
     {

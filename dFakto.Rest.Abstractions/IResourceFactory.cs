@@ -13,6 +13,13 @@ public interface IResourceFactory
     /// <param name="self">Self Uri</param>
     /// <returns>The IResource</returns>
     IResource Create(Uri self);
+    
+    /// <summary>
+    /// Creates a new Resource
+    /// </summary>
+    /// <param name="self">Self Link</param>
+    /// <returns>The IResource</returns>
+    IResource Create(Link self);
         
     /// <summary>
     /// Create a new Resource Serializer
