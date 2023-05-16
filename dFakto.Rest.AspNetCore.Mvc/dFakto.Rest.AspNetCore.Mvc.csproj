@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageVersion>1.0.0-rc.5</PackageVersion>
+        <PackageVersion>1.0.0-rc.6</PackageVersion>
         <Copyright>© dFakto 2019-2023</Copyright>
         <PackageProjectUrl>https://github.com/depfac/dfakto.rest</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -13,6 +13,8 @@
         <Title>dFakto.Rest.AspNetCore.Mvc</Title>
         <LangVersion>latestmajor</LangVersion>
         <Nullable>enable</Nullable>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <FileVersion>1.0.0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
