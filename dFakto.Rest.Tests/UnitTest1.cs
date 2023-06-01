@@ -325,7 +325,5 @@ namespace dFakto.Rest.Tests
              Assert.Equal(json,await _serializer.Serialize(r2));
 
          }
-
-         
      }
  }

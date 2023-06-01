@@ -51,7 +51,6 @@ internal class Resource : IResource
 
     public ISingleOrList<IResource> GetEmbeddedResource(string name)
     {
-        
         return _embedded.TryGetValue(name, out var value) ? value : throw new Exception($"No Link named {name} found");
     }
 
@@ -153,16 +152,17 @@ internal class Resource : IResource
         return this;
     }
 
-    public T? As<T>()
+    public T As<T>()
     {
-        return JsonSerializer.Deserialize<T>(JsonObjectValues,_serializerSettings);
+        return JsonSerializer.Deserialize<T>(JsonObjectValues,_serializerSettings) ??
+            throw new InvalidOperationException("Resource fields cannot be null");
     }
 
-    public T? Bind<T>(T type)
+    public T Bind<T>(T type)
     {
         return As<T>();
     }
-    
+
     internal IResource AddLink(string name, SingleOrList<Link> link)
     {
         if (string.IsNullOrWhiteSpace(name))

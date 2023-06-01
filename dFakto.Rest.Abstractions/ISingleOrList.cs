@@ -2,10 +2,10 @@ using System.Collections.Generic;
 
 namespace dFakto.Rest.Abstractions;
 
-public interface ISingleOrList<T>
+public interface ISingleOrList<out T>
 {
-    public int Count { get; }
-    public IEnumerable<T> Values { get; }
-    public T Value { get; }
+    int Count { get; } 
+    IEnumerable<T> Values { get; }
+    T Value { get; }
     bool SingleValued { get; }    
 }
